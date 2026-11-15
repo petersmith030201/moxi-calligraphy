@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: '24'
       - name: Check model and static release
-        run: node --test tests/model.test.mjs tests/store.test.mjs tests/static.test.mjs
+        run: npm test
       - name: Build approved public assets
         run: node tools/build-static.mjs
       - name: Upload static site

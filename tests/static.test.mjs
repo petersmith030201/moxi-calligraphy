@@ -9,6 +9,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const json = async relative => JSON.parse(await readFile(path.join(root, relative), 'utf8'));
 const exists = async relative => access(path.join(root, relative)).then(() => true, () => false);
 const metadataPromise = json('data/characters.json');
+const versionPromise = json('package.json').then(value => value.version);
 
 function localAsset(reference, owner = 'index.html') {
   const url = new URL(reference, new URL(owner, 'https://moxi.invalid/'));
@@ -97,6 +98,7 @@ test('source manifest identifies the snapshot and independent dictionary/graphic
 });
 
 test('active entry points have no legacy PDF/AI payloads or remote static/CDN imports', async () => {
+  const version = await versionPromise;
   const html = await readFile(path.join(root, 'index.html'), 'utf8');
   const css = await readFile(path.join(root, 'styles.css'), 'utf8');
   assert.doesNotMatch(html, /<(?:script|img|iframe|source|link)\b[^>]*(?:src|href)\s*=\s*["'](?:https?:)?\/\//i);
@@ -106,7 +108,7 @@ test('active entry points have no legacy PDF/AI payloads or remote static/CDN im
     if (!reference) continue;
     const asset = localAsset(reference);
     await access(asset.absolute);
-    if (['/app.js', '/styles.css'].includes(asset.url.pathname)) assert.equal(asset.url.searchParams.get('v'), '0.3.0', reference);
+    if (['/app.js', '/styles.css'].includes(asset.url.pathname)) assert.equal(asset.url.searchParams.get('v'), version, reference);
   }
   const activeNames = ['index.html', 'styles.css', 'app.js', 'model.js'];
   if (await exists('store.js')) activeNames.push('store.js');
@@ -118,10 +120,27 @@ test('active entry points have no legacy PDF/AI payloads or remote static/CDN im
       for (const match of contents.matchAll(/\bfrom\s*["'](\.\.?\/[^"']+)["']/g)) {
         const asset = localAsset(match[1], name);
         await access(asset.absolute);
-        if (name === 'app.js' && ['/model.js', '/store.js'].includes(asset.url.pathname)) assert.equal(asset.url.searchParams.get('v'), '0.3.0', match[1]);
+        if (name === 'app.js' && ['/model.js', '/store.js'].includes(asset.url.pathname)) assert.equal(asset.url.searchParams.get('v'), version, match[1]);
       }
     }
   }
+});
+
+test('stroke retrieval has its own name control and preserves the single create-note entry', async () => {
+  const html = await readFile(path.join(root, 'index.html'), 'utf8');
+  const app = await readFile(path.join(root, 'app.js'), 'utf8');
+  for (const id of ['stroke-name-input', 'stroke-name-source', 'stroke-matched-notes']) {
+    assert.equal([...html.matchAll(new RegExp(`\\bid=["']${id}["']`, 'g'))].length, 1, id);
+  }
+  for (const id of ['note-kind', 'note-kind-filter']) {
+    const select = html.match(new RegExp(`<select\\b[^>]*\\bid=["']${id}["'][^>]*>([\\s\\S]*?)<\\/select>`, 'i'))?.[1];
+    assert.match(select || '', /<option\b[^>]*\bvalue=["']stroke["']/i, id);
+  }
+  assert.match(app, /matchStrokeNotes/);
+  assert.match(app, /\.\/data\/stroke-names\.json/);
+  assert.equal([...html.matchAll(/<button\b[^>]*\bid=["']new-note["'][^>]*>/gi)].length, 1);
+  await access(path.join(root, 'data/stroke-names.json'));
+  await access(path.join(root, 'licenses/Cnchar-MIT.txt'));
 });
 
 test('knowledge library is the sole new-note entry and offers collapsed first-use and component help', async () => {
@@ -157,11 +176,11 @@ async function withBuildFixture(action) {
     for (const directory of ['tools', 'data/characters', 'vendor/fonts', 'licenses', 'worker']) await mkdir(path.join(fixture, directory), { recursive: true });
     await copyFile(path.join(root, 'tools/build-static.mjs'), path.join(fixture, 'tools/build-static.mjs'));
     for (const name of ['index.html', 'styles.css', 'app.js', 'model.js']) await writeFile(path.join(fixture, name), name === 'index.html' ? '<!doctype html><html></html>' : '');
-    for (const name of ['data/characters.json', 'data/source-manifest.json', 'data/characters/一.json']) await writeFile(path.join(fixture, name), '{}');
+    for (const name of ['data/characters.json', 'data/source-manifest.json', 'data/stroke-names.json', 'data/characters/一.json']) await writeFile(path.join(fixture, name), '{}');
     await writeFile(path.join(fixture, 'vendor/hanzi-writer.min.js'), '/* fixture */');
     await writeFile(path.join(fixture, 'vendor/fonts/moxi-book-serif.woff2'), 'wOF2fixture');
     await writeFile(path.join(fixture, 'licenses/LICENSE'), 'Fixture only.');
-    for (const name of ['data/knowledge.json', 'data/books.json', 'data/atlas-rules.json', 'data/strokes-rules.json', 'data/structure-rules.json', 'pdf-local.js', 'vendor/pdf.mjs', 'vendor/pdf.worker.mjs', 'worker/index.js']) await writeFile(path.join(fixture, name), 'LEGACY_NOT_PUBLIC');
+    for (const name of ['data/knowledge.json', 'data/books.json', 'data/atlas-rules.json', 'data/strokes-rules.json', 'data/structure-rules.json', 'data/stroke-names-private.json', 'pdf-local.js', 'vendor/pdf.mjs', 'vendor/pdf.worker.mjs', 'worker/index.js']) await writeFile(path.join(fixture, name), 'LEGACY_NOT_PUBLIC');
     await action(fixture, () => spawnSync(process.execPath, ['tools/build-static.mjs'], { cwd: fixture, encoding: 'utf8' }));
   } finally {
     const canonicalParent = await realpath(fixtureParent);
@@ -182,12 +201,14 @@ test('repeated builds remove stale output, preserve source files and exclude leg
     result = build();
     assert.equal(result.status, 0, result.stderr);
     assert.deepEqual((await readdir(path.join(fixture, 'dist'))).sort(), ['.nojekyll', 'app.js', 'data', 'index.html', 'licenses', 'model.js', 'store.js', 'styles.css', 'vendor']);
-    assert.deepEqual((await readdir(path.join(fixture, 'dist/data'))).sort(), ['characters', 'characters.json', 'source-manifest.json']);
+    assert.deepEqual((await readdir(path.join(fixture, 'dist/data'))).sort(), ['characters', 'characters.json', 'source-manifest.json', 'stroke-names.json']);
     assert.deepEqual((await readdir(path.join(fixture, 'dist/vendor'))).sort(), ['fonts', 'hanzi-writer.min.js']);
     assert.deepEqual(await readdir(path.join(fixture, 'dist/vendor/fonts')), ['moxi-book-serif.woff2']);
     await assert.rejects(access(path.join(fixture, 'dist/stale.txt')));
     await assert.rejects(access(path.join(fixture, 'dist/private-textbook.pdf')));
     await assert.rejects(access(path.join(fixture, 'dist/.env')));
+    await assert.rejects(access(path.join(fixture, 'dist/data/stroke-names-private.json')));
+    assert.equal(await readFile(path.join(fixture, 'dist/data/stroke-names.json'), 'utf8'), '{}');
     await access(path.join(fixture, 'data/knowledge.json'));
     await access(path.join(fixture, 'worker/index.js'));
   });

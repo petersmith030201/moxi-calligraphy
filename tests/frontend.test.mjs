@@ -24,10 +24,10 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
   async function until(predicate,message='Expected UI state was not reached'){
     const deadline=Date.now()+3500;while(Date.now()<deadline){if(predicate())return;await delay(12);}assert.fail(message);
   }
-  async function setup(t,{saved,realEngine=false,tickingClock=false}={}){
+  async function setup(t,{saved,realEngine=false,tickingClock=false,namesData,holdAnimation=false}={}){
     const consoleErrors=[],virtualConsole=new VirtualConsole();virtualConsole.on('jsdomError',error=>consoleErrors.push(error));
     const dom=new JSDOM(html,{url:'https://example.github.io/moxi-calligraphy/',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole});
-    const w=dom.window,doc=w.document,downloads=[],calls=[];t.after(()=>w.close());
+    const w=dom.window,doc=w.document,downloads=[],calls=[],animations=[],engineCalls=[];t.after(()=>w.close());
     const style=doc.createElement('style');style.textContent=css;doc.head.append(style);
     if(tickingClock){const RealDate=w.Date;let clock=RealDate.now();w.Date=class extends RealDate{constructor(...args){super(...(args.length?args:[++clock]));}static now(){return ++clock;}};}
     w.scrollTo=()=>{};w.Blob=Blob;w.URL.createObjectURL=blob=>{downloads.push(blob);return 'blob:local-export';};w.URL.revokeObjectURL=()=>{};
@@ -38,13 +38,22 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
     w.fetch=async input=>{
       const pathname=new URL(String(input),w.location.href).pathname;calls.push(pathname);let value;
       if(pathname.endsWith('/data/characters.json'))value=metadata;
+      else if(pathname.endsWith('/data/stroke-names.json'))value=namesData??JSON.parse(await readFile(path.join(root,'data/stroke-names.json'),'utf8'));
       else if(pathname.includes('/data/characters/')){
         try{value=JSON.parse(await readFile(path.join(root,'data/characters',decodeURIComponent(pathname.split('/').at(-1))),'utf8'));}catch{return{ok:false,status:404};}
       }else throw Error(`Unexpected network request: ${pathname}`);
       return{ok:true,status:200,json:async()=>w.JSON.parse(JSON.stringify(value))};
     };
     if(realEngine)w.eval(await readFile(path.join(root,'vendor/hanzi-writer.min.js'),'utf8'));
-    else w.HanziWriter={create(target,char){doc.getElementById(target).textContent=`SVG reference for ${char}`;return{showCharacter(){},hideCharacter(){},showOutline(){},hideOutline(){},pauseAnimation(){},resumeAnimation(){},animateCharacter(){return Promise.resolve();},animateStroke(){return Promise.resolve();},updateColor(){},cancelQuiz(){}};}};
+    else w.HanziWriter={create(target,char){doc.getElementById(target).textContent=`SVG reference for ${char}`;
+      const animate=(kind,index,options={})=>{
+        engineCalls.push({kind,char,index});
+        return new Promise((resolve,reject)=>{
+          const finish=(result={})=>{options.onComplete?.(result);resolve(result);};
+          if(holdAnimation)animations.push({kind,char,index,finish,fail:()=>reject(Error('Simulated animation failure'))});else queueMicrotask(()=>finish());
+        });
+      };
+      return{showCharacter(){},hideCharacter(){return Promise.resolve();},showOutline(){},hideOutline(){},pauseAnimation(){engineCalls.push({kind:'pause',char});},resumeAnimation(){engineCalls.push({kind:'resume',char});},animateCharacter(options){return animate('character',null,options);},animateStroke(index,options){return animate('stroke',index,options);},updateColor(){},cancelQuiz(){}};}};
     const context=dom.getInternalVMContext(),cache=new Map();
     async function load(filename){
       if(cache.has(filename))return cache.get(filename);
@@ -62,7 +71,7 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
       submit('note-form');await until(()=>!$('note-dialog').open,`Note did not save: ${$('note-form-status').textContent}`);
     };
     const importText=async text=>{Object.defineProperty($('import-file'),'files',{configurable:true,value:[{name:'backup.json',size:Buffer.byteLength(text),text:async()=>text}]});$('import-file').dispatchEvent(new w.Event('change',{bubbles:true}));await delay(45);};
-    return{w,doc,$,set,submit,lookup,newNote,importText,calls,downloads,consoleErrors};
+    return{w,doc,$,set,submit,lookup,newNote,importText,calls,downloads,consoleErrors,animations,engineCalls};
   }
   test('real page boots with only three simplified sections and preserves legacy storage',async t=>{
     const {$,doc,w,calls,consoleErrors}=await setup(t);assert.match(doc.title,/一字一法/);assert.match($('fact-count').textContent,/5/);
@@ -70,7 +79,7 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
     assert.equal(w.getComputedStyle(doc.documentElement).getPropertyValue('--paper').trim(),'#F6F3EB');assert.equal(consoleErrors.filter(error=>/CSS|stylesheet/.test(error.message)).length,0);
     for(const page of ['lookup','notebook','data']){doc.querySelector(`[data-page="${page}"]`).click();assert.equal($(`page-${page}`).hidden,false);}
     assert.equal(doc.getElementById('teacher-form'),null);assert.equal(doc.getElementById('practice-canvas'),null);
-    assert.equal(w.localStorage.getItem('moxi-legacy-learning'),'preserve me');assert.ok(calls.every(url=>url.includes('/data/characters')));
+    assert.equal(w.localStorage.getItem('moxi-legacy-learning'),'preserve me');assert.ok(calls.every(url=>url.includes('/data/characters')||url.endsWith('/data/stroke-names.json')));
   });
   test('actual Hanzi Writer creates SVG from the bundled character data',async t=>{
     const {$,lookup}=await setup(t,{realEngine:true});await until(()=>$('writer-target').querySelectorAll('svg path').length>0,'Real library did not create SVG');assert.equal($('glyph-fallback').hidden,true);
@@ -152,8 +161,8 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
     $('notebook-list').querySelector('.note-controls button').click();set('note-category','我的新分类');submit('note-form');assert.equal(JSON.parse(w.localStorage.getItem(storageKey)).notes.find(note=>note.target==='氵').category,'我的新分类');
     choose('我的新分类');assert.match($('notebook-list').textContent,/三点水笔记/);await lookup('江');assert.match($('matched-notes').textContent,/三点水笔记/);assert.match($('matched-notes').textContent,/我的新分类/);
   });
-  test('classification survives the v2 export and import flow',async t=>{
-    const first=await setup(t);await first.newNote({category:'all'});first.$('export-backup').click();await until(()=>first.downloads.length);const text=await first.downloads.at(-1).text();assert.equal(JSON.parse(text).schemaVersion,2);
+  test('classification survives the current export and import flow',async t=>{
+    const first=await setup(t);await first.newNote({category:'all'});first.$('export-backup').click();await until(()=>first.downloads.length);const text=await first.downloads.at(-1).text();assert.equal(JSON.parse(text).schemaVersion,3);
     const second=await setup(t);await second.importText(text);second.$('confirm-import').click();assert.equal(JSON.parse(second.w.localStorage.getItem(storageKey)).notes[0].category,'all');
     const option=[...second.$('note-category-filter').options].find(option=>option.textContent==='all');assert.ok(option);assert.notEqual(option.value,'all');second.set('note-category-filter',option.value);assert.match(second.$('notebook-list').textContent,/三点水笔记/);
   });
@@ -161,5 +170,66 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
     const first=await setup(t);await first.newNote();first.$('export-backup').click();await until(()=>first.downloads.length);const legacy=JSON.parse(await first.downloads.at(-1).text());legacy.schemaVersion=1;delete legacy.notes[0].category;
     const stored=await setup(t,{saved:{notes:legacy.notes,overrides:[],aliases:[]}});assert.match(stored.$('notebook-list').textContent,/三点水笔记/);assert.match(stored.$('notebook-list').textContent,/未分类/);
     const imported=await setup(t);await imported.importText(JSON.stringify(legacy));imported.$('confirm-import').click();assert.equal(JSON.parse(imported.w.localStorage.getItem(storageKey)).notes[0].category,'');
+  });
+  test('stroke references include all matching categories across note kinds and never match body text alone',async t=>{
+    const {$,doc,newNote,w}=await setup(t);
+    await newNote({kind:'stroke',target:'横',category:'长横练习',title:'长横记录',content:'  长横原文\n保持换行  '});
+    await newNote({kind:'character',target:'橋',category:'短横观察',title:'短横记录',content:'短横原文'});
+    await newNote({kind:'component',target:'氵',category:'横折关联',title:'复合笔画记录',content:'复合笔画原文'});
+    await newNote({kind:'stroke',target:'竖',category:'竖画练习',title:'竖画记录',content:'竖画原文'});
+    await newNote({kind:'stroke',target:'捺',category:'其他',title:'正文不匹配',content:'横折钩只写在正文'});
+    doc.querySelector('[data-page="lookup"]').click();
+    const query=name=>{$('stroke-name-input').value=name;$('stroke-name-input').dispatchEvent(new w.Event('input',{bubbles:true}));};
+    query('横');assert.equal($('stroke-matched-notes').querySelectorAll('.note-card').length,3);
+    assert.match($('stroke-matched-notes').textContent,/短横记录/);assert.match($('stroke-matched-notes').textContent,/复合笔画记录/);assert.doesNotMatch($('stroke-matched-notes').textContent,/竖画记录|正文不匹配/);
+    assert.equal($('stroke-matched-notes').querySelector('.note-content').textContent,'  长横原文\n保持换行  ');
+    query('竖');assert.equal($('stroke-matched-notes').querySelectorAll('.note-card').length,1);assert.match($('stroke-matched-notes').textContent,/竖画记录/);
+    query('横折钩');assert.equal($('stroke-matched-notes').querySelectorAll('.note-card').length,3);assert.match($('stroke-matched-notes').textContent,/相关候选/);
+    query('<横>');assert.match($('stroke-matched-notes').textContent,/未检索/);assert.equal(doc.querySelector('#stroke-matched-notes img'),null);
+    query('');assert.equal($('stroke-matched-notes').querySelectorAll('.note-card').length,0);
+  });
+  test('stroke notes survive the current backup flow and stay separate from whole-character matches',async t=>{
+    const first=await setup(t);await first.newNote({kind:'stroke',target:'横',category:'短横观察',content:'笔画原始内容'});
+    assert.equal(first.$('note-position').disabled,true);assert.equal(first.$('note-scope').disabled,true);
+    first.$('export-backup').click();await until(()=>first.downloads.length);const data=await first.downloads.at(-1).text();assert.equal(JSON.parse(data).schemaVersion,3);
+    const second=await setup(t);await second.importText(data);second.$('confirm-import').click();
+    assert.equal(JSON.parse(second.w.localStorage.getItem(storageKey)).notes[0].kind,'stroke');
+    second.set('note-kind-filter','stroke');assert.match(second.$('notebook-list').textContent,/笔画原始内容/);
+    await second.lookup('横');assert.doesNotMatch(second.$('matched-notes').textContent,/笔画原始内容/);
+    second.$('stroke-name-input').value='横';second.$('stroke-name-input').dispatchEvent(new second.w.Event('input',{bubbles:true}));assert.match(second.$('stroke-matched-notes').textContent,/笔画原始内容/);
+  });
+  test('known stroke names follow single-step navigation and manual adjustments do not leak between characters',async t=>{
+    const {$,lookup,w}=await setup(t);await lookup('木');
+    for(const name of ['横','竖','撇','捺']){$('next-stroke').click();await until(()=>$('stroke-name-input').value===name);assert.match($('stroke-name-source').textContent,/CNChar/);}
+    $('previous-stroke').click();assert.equal($('stroke-name-input').value,'撇');
+    $('stroke-name-input').value='长撇';$('stroke-name-input').dispatchEvent(new w.Event('input',{bubbles:true}));
+    $('previous-stroke').click();assert.equal($('stroke-name-input').value,'竖');$('next-stroke').click();assert.equal($('stroke-name-input').value,'长撇');
+    await lookup('橋');$('next-stroke').click();assert.equal($('stroke-name-input').value,'');assert.match($('stroke-name-source').textContent,/没有|未知/);
+    await lookup('木');$('next-stroke').click();assert.equal($('stroke-name-input').value,'横');await until(()=>$('pause-button').disabled);
+  });
+  test('ambiguous or mismatched name records stay unknown without disabling stroke animation',async t=>{
+    const {$,lookup}=await setup(t,{namesData:{schemaVersion:1,characters:{木:['横'],永:['点','横折钩',null,'撇','捺']}}});
+    await lookup('木');$('next-stroke').click();assert.equal($('stroke-name-input').value,'');assert.equal($('play-button').disabled,false);
+    await lookup('永');for(let i=0;i<3;i++)$('next-stroke').click();assert.equal($('stroke-name-input').value,'');assert.match($('stroke-matched-notes').textContent,/名称未知/);await until(()=>$('pause-button').disabled);
+  });
+  test('replaying the same stroke cannot let an older completion disable the new pause control',async t=>{
+    const {$,lookup,animations}=await setup(t,{holdAnimation:true});await lookup('木');
+    $('next-stroke').click();await until(()=>animations.length===1);const previous=animations[0];
+    $('replay-button').click();await until(()=>animations.length===2);assert.equal(animations[1].index,0);
+    previous.finish();await delay(15);assert.equal($('pause-button').disabled,false);assert.equal($('stroke-name-input').value,'横');
+    animations[1].finish();await until(()=>animations.length===3);assert.equal(animations[2].index,1);
+    await lookup('人');animations[2].finish();await delay(15);assert.equal($('current-character').textContent,'人');assert.equal($('pause-button').disabled,true);assert.doesNotMatch($('stroke-status').textContent,/播放完成/);
+  });
+  test('pause holds the transition between strokes and continue resumes the same run',async t=>{
+    const {$,lookup,animations,engineCalls}=await setup(t,{holdAnimation:true});await lookup('十');
+    $('play-button').click();await until(()=>animations.length===1);$('pause-button').click();assert.equal($('pause-button').textContent,'继续');
+    animations[0].finish();await delay(15);assert.equal(animations.length,1);
+    $('pause-button').click();await until(()=>animations.length===2);assert.equal(animations[1].index,1);assert.ok(engineCalls.some(call=>call.kind==='resume'));
+    animations[1].finish();await until(()=>$('stroke-status').textContent.includes('播放完成'));assert.equal($('pause-button').disabled,true);
+  });
+  test('an animation error is shown without preventing replay',async t=>{
+    const {$,animations}=await setup(t,{holdAnimation:true});$('play-button').click();await until(()=>animations.length===1);animations[0].fail();
+    await until(()=>$('stroke-status').textContent.includes('播放失败'));assert.equal($('pause-button').disabled,true);assert.equal($('replay-button').disabled,false);
+    $('replay-button').click();await until(()=>animations.length===2);assert.equal($('pause-button').disabled,false);
   });
 }

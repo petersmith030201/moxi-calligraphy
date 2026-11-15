@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
-  normalizeNote, normalizeOverride, analyzeCharacter, matchNotes,
+  normalizeNote, normalizeOverride, analyzeCharacter, matchNotes, matchStrokeNotes,
   makeBackup, planImport, applyImport,
 } from '../model.js';
 
@@ -264,12 +264,12 @@ test('v1 notebook backups migrate a missing category without changing original i
   assert.equal(JSON.stringify(legacy), before, 'Import planning must not rewrite the legacy backup');
 });
 
-test('new v2 exports and imports preserve categories and body whitespace exactly', () => {
+test('new v3 exports and imports preserve categories and body whitespace exactly', () => {
   const categorized = note('categorized-round-trip', {
     category: '课堂笔记 / 偏旁', content: '  氵：第一行\r\n\n  第二行。\t  ',
   });
   const backup = makeBackup([categorized], []);
-  assert.equal(backup.schemaVersion, 2);
+  assert.equal(backup.schemaVersion, 3);
   assert.equal(backup.notes[0].category, categorized.category);
   const imported = applyImport(planImport(JSON.stringify(backup), [], []));
   assert.deepEqual(imported.notes, [categorized]);
@@ -279,10 +279,10 @@ test('new v2 exports and imports preserve categories and body whitespace exactly
 test('v2 requires category while v1 migration still validates every other field', () => {
   const incomplete = { ...note('required-category') };
   delete incomplete.category;
-  assert.throws(() => planImport({ ...makeBackup([], []), notes: [incomplete] }, [], []), /category/);
+  assert.throws(() => planImport({ ...makeBackup([], []), schemaVersion: 2, notes: [incomplete] }, [], []), /category/);
   delete incomplete.content;
   assert.throws(() => planImport({ ...makeBackup([], []), schemaVersion: 1, notes: [incomplete] }, [], []), /content/);
-  for (const schemaVersion of [0, 3, '2']) {
+  for (const schemaVersion of [0, 4, '3']) {
     assert.throws(() => planImport({ ...makeBackup([], []), schemaVersion }, [], []), /版本/);
   }
 });
@@ -320,4 +320,116 @@ test('category does not alter component matching, including the distinct 氵 gly
   assert.deepEqual(after.applicable[0].reasons, before.applicable[0].reasons);
   assert.equal(after.applicable[0].note.category, '偏旁练习');
   assert.deepEqual(allIds(matchNotes('水', analyzeCharacter('水', metadata), [changed])), []);
+});
+
+test('stroke notes accept bounded custom Chinese names without certifying their terminology', () => {
+  for (const target of ['横', '竖提', '横折钩', '卧钩', '挑', '自己命名的横画']) {
+    assert.equal(note(`stroke-${target}`, { id: `stroke-${target.length}-${target.codePointAt(0)}`, kind: 'stroke', target }).target, target);
+  }
+  for (const target of ['', '横/竖', 'horizontal', '横'.repeat(21), null]) {
+    assert.throws(() => note('invalid-stroke-name', { kind: 'stroke', target }), /笔画名称/);
+  }
+});
+
+test('横 returns every literal category match across note kinds, plus exact stroke targets', () => {
+  const notes = [
+    note('horizontal-character', { category: '长横练习' }),
+    note('horizontal-component', { kind: 'component', target: '木', category: '横折关联' }),
+    note('horizontal-structure', { kind: 'structure', target: '左右结构', category: '短横对照' }),
+    note('horizontal-stroke', { kind: 'stroke', target: '横', category: '' }),
+    note('other-stroke-category', { kind: 'stroke', target: '竖', category: '横竖比较' }),
+    note('ordinary-character-target', { target: '横', category: '' }),
+    note('unrelated-category', { category: '撇的练习' }),
+  ];
+  const result = matchStrokeNotes('横', notes);
+  assert.deepEqual(result.map(row => row.note.id), notes.slice(0, 5).map(row => row.id));
+  assert.deepEqual(result[0].matchedKeywords, ['横']);
+  assert.deepEqual(result[3].matchedKeywords, []);
+  assert.ok(result[3].reasons.some(reason => /名称精确匹配/.test(reason)));
+  assert.ok(result[1].reasons.some(reason => /分类文字匹配/.test(reason)));
+  assert.ok(result.every(row => row.reasons.some(reason => /不判断实际笔画长短/.test(reason))));
+});
+
+test('compound stroke names match any contained keyword and label them as text candidates', () => {
+  const notes = [
+    note('category-horizontal', { category: '横' }),
+    note('category-turn', { category: '折笔' }),
+    note('category-hook', { category: '钩的练习' }),
+    note('category-all', { category: '横折折钩钩' }),
+    note('category-vertical', { category: '竖' }),
+    note('body-only', { category: '', content: '横折钩只出现在正文，不应被分类检索命中。' }),
+    note('title-only', { category: '', title: '横折钩' }),
+  ];
+  const result = matchStrokeNotes('横折钩', notes);
+  assert.deepEqual(result.map(row => row.note.id), notes.slice(0, 4).map(row => row.id));
+  assert.deepEqual(result[3].matchedKeywords, ['横', '折', '钩']);
+  assert.ok(result.every(row => row.reasons.some(reason => /相关候选/.test(reason))));
+  assert.deepEqual(matchStrokeNotes('竖提', [note('lift', { category: '提按' })])[0].matchedKeywords, ['提']);
+});
+
+test('each basic stroke retrieves every matching category without depending on the note purpose', () => {
+  const cases = [
+    ['横', '长横练习', '短横观察'], ['竖', '悬针竖练习', '垂露竖观察'],
+    ['撇', '长撇练习', '短撇观察'], ['捺', '平捺练习', '斜捺观察'],
+    ['点', '右点练习', '左点观察'], ['提', '提画练习', '提笔观察'],
+    ['折', '横折练习', '竖折观察'], ['钩', '竖钩练习', '横钩观察'],
+  ];
+  for (const [index, [strokeName, firstCategory, secondCategory]] of cases.entries()) {
+    const records = [
+      note(`all-basic-first-${index}`, { kind: 'character', category: firstCategory }),
+      note(`all-basic-second-${index}`, { kind: 'component', target: '氵', category: secondCategory }),
+      note('all-basic-unrelated', { kind: 'structure', target: '左右结构', category: '结构练习', content: `${strokeName}只在正文中出现。` }),
+    ];
+    const results = matchStrokeNotes(strokeName, records);
+    assert.deepEqual(results.map(row => row.note.id), records.slice(0, 2).map(row => row.id), strokeName);
+    assert.ok(results.every(row => row.reasons.some(reason => /相关候选/.test(reason))), strokeName);
+  }
+});
+
+test('stroke target names are exact rather than an implicit basic-versus-compound applicability rule', () => {
+  const basic = note('target-horizontal', { kind: 'stroke', target: '横' });
+  const compound = note('target-compound', { kind: 'stroke', target: '横折钩' });
+  assert.deepEqual(matchStrokeNotes('横', [basic, compound]).map(row => row.note.id), ['target-horizontal']);
+  assert.deepEqual(matchStrokeNotes('横折钩', [basic, compound]).map(row => row.note.id), ['target-compound']);
+  const custom = note('custom-stroke-target', { kind: 'stroke', target: '挑' });
+  assert.deepEqual(matchStrokeNotes('挑', [custom]).map(row => row.note.id), ['custom-stroke-target']);
+});
+
+test('ordinary character component and structure matching never consumes stroke notes', () => {
+  const notes = [
+    note('stroke-not-a-character', { kind: 'stroke', target: '横' }),
+    note('stroke-not-a-structure', { kind: 'stroke', target: '左右结构' }),
+  ];
+  const analysis = { character: '横', structure: '左右结构', uncertain: false, components: [{ name: '横', position: 'left', depth: 1, path: '0' }] };
+  assert.deepEqual(matchNotes('横', analysis, notes), { exact: [], applicable: [], candidates: [] });
+});
+
+test('stroke retrieval keeps raw text and every related category result rather than a small top list', () => {
+  const body = '  用户原始横画笔记\r\n\n含首尾空白。\t  ';
+  const notes = Array.from({ length: 20 }, (_, index) => note(`many-horizontal-${index}`, { category: `横画分类${index}`, content: body }));
+  const original = JSON.stringify(notes);
+  const result = matchStrokeNotes('横', notes);
+  assert.equal(result.length, 20);
+  assert.ok(result.every(row => row.note.content === body));
+  assert.equal(JSON.stringify(notes), original);
+});
+
+test('empty stroke selection is safe and malformed nonempty names fail readably', () => {
+  for (const value of [null, undefined, '', '  ']) assert.deepEqual(matchStrokeNotes(value, []), []);
+  for (const value of ['<横>', '横'.repeat(21), 1]) assert.throws(() => matchStrokeNotes(value, []), /笔画名称/);
+  assert.deepEqual(matchStrokeNotes('横', null), []);
+});
+
+test('v3 backs up stroke notes while v1 and v2 notebooks remain importable', () => {
+  const strokeNote = note('stroke-backup', { kind: 'stroke', target: '横折钩', category: '横折类', content: '  仍保留原文\r\n  ' });
+  const backup = makeBackup([strokeNote], []);
+  assert.equal(backup.schemaVersion, 3);
+  assert.deepEqual(applyImport(planImport(JSON.stringify(backup), [], [])).notes, [strokeNote]);
+  const v2Note = note('v2-existing-category', { category: '旧分类' });
+  const v2Backup = { ...makeBackup([v2Note], []), schemaVersion: 2 };
+  assert.deepEqual(applyImport(planImport(v2Backup, [], [])).notes, [v2Note]);
+  const v1Note = { ...note('v1-still-supported') };
+  delete v1Note.category;
+  const v1Backup = { ...makeBackup([], []), schemaVersion: 1, notes: [v1Note] };
+  assert.equal(applyImport(planImport(v1Backup, [], [])).notes[0].category, '');
 });

@@ -7,7 +7,7 @@ const root = await realpath(path.resolve(path.dirname(fileURLToPath(import.meta.
 const destination = path.join(root, 'dist');
 const entries = [
   'index.html', 'styles.css', 'app.js', 'model.js',
-  'data/characters.json', 'data/characters', 'data/source-manifest.json',
+  'data/characters.json', 'data/characters', 'data/source-manifest.json', 'data/stroke-names.json',
   'vendor/hanzi-writer.min.js', 'vendor/fonts/moxi-book-serif.woff2', 'licenses',
 ];
 const approved = new Map();

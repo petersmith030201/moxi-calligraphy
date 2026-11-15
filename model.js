@@ -2,7 +2,8 @@
 // Reserved backup aliases are preserved but do not participate in matching.
 const POSITIONS = new Set(['any', 'left', 'right', 'top', 'bottom', 'inside', 'outside', 'center', 'standalone']);
 const POSITION_LABELS = {any:'不限位置',left:'左侧',right:'右侧',top:'上方',bottom:'下方',inside:'内部',outside:'外部',center:'中间',standalone:'独立成字'};
-const KINDS = new Set(['character', 'component', 'structure']);
+const KINDS = new Set(['character', 'component', 'structure', 'stroke']);
+const STROKE_KEYWORDS = ['横', '竖', '撇', '捺', '点', '提', '折', '钩'];
 const SCOPES = new Set(['top', 'any-depth']);
 const COMMON_INDEPENDENT = new Set(Array.from('永天大木水火人一二三十上下口日月田目山川中土工小'));
 const UNSAFE = new Set(['__proto__', 'prototype', 'constructor']);
@@ -84,6 +85,11 @@ function structure(value, optional = false) {
   if (!STRUCTURES.has(result)) throw new Error('请选择规范结构名称，如左右结构、上下结构、半包围结构或独体字。');
   return STRUCTURES.get(result);
 }
+function stroke(value) {
+  const result = text(value, '笔画名称', 20);
+  if (!result || !/^\p{Script=Han}+$/u.test(result)) throw new Error('笔画名称请填写1至20个汉字，如横、竖提或横折钩；自定义名称不代表规范认证。');
+  return result;
+}
 function timestamp(value, fallback, label) {
   if (value === undefined && fallback) return fallback;
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T/.test(value) || !Number.isFinite(Date.parse(value))) {
@@ -107,8 +113,9 @@ function normalize(raw, strict = false) {
     onlyKeys(raw, NOTE_KEYS, '笔记');
     for (const key of NOTE_KEYS) if (!Object.hasOwn(raw, key)) throw new Error(`笔记缺少字段：${key}。`);
   }
-  if (!KINDS.has(raw.kind)) throw new Error('笔记类型须为汉字、部件或结构。');
-  const target = raw.kind === 'character' ? character(raw.target) : raw.kind === 'component' ? component(raw.target) : structure(raw.target);
+  if (!KINDS.has(raw.kind)) throw new Error('笔记类型须为汉字、部件、结构或笔画。');
+  const target = raw.kind === 'character' ? character(raw.target) : raw.kind === 'component' ? component(raw.target)
+    : raw.kind === 'stroke' ? stroke(raw.target) : structure(raw.target);
   const position = raw.position ?? 'any';
   const scope = raw.scope ?? 'top';
   if (!POSITIONS.has(position)) throw new Error('部件位置无效。');
@@ -257,6 +264,7 @@ export function matchNotes(value, analysis, notes) {
   for (const raw of notes) {
     let note;
     try { note = normalizeNote(raw); } catch { continue; }
+    if (note.kind === 'stroke') continue;
     if (note.kind === 'character') {
       if (note.target === current) result.exact.push({ note, reasons: ['仅关联本字，保留原始笔记正文。'] });
       continue;
@@ -291,6 +299,29 @@ export function matchNotes(value, analysis, notes) {
   return result;
 }
 
+// All returned items are related candidates, never an applicability judgment.
+// Classification text is a literal keyword match, not stroke geometry analysis.
+export function matchStrokeNotes(strokeName, notes) {
+  if (strokeName === null || strokeName === undefined || (typeof strokeName === 'string' && !strokeName.trim())) return [];
+  const name = stroke(strokeName);
+  if (!Array.isArray(notes)) return [];
+  const keywords = STROKE_KEYWORDS.filter((keyword) => name.includes(keyword));
+  const results = [];
+  for (const raw of notes) {
+    let note;
+    try { note = normalizeNote(raw); } catch { continue; }
+    const matchedKeywords = keywords.filter((keyword) => note.category.includes(keyword));
+    const exactTarget = note.kind === 'stroke' && note.target === name;
+    if (!exactTarget && !matchedKeywords.length) continue;
+    const reasons = [];
+    if (exactTarget) reasons.push(`笔画目标名称精确匹配：${name}；仍须核对原笔记条件。`);
+    if (matchedKeywords.length) reasons.push(`分类文字匹配：${matchedKeywords.join('、')}（分类：${note.category}）。`);
+    reasons.push('全部为相关候选；文字匹配不判断实际笔画长短、形状或写法适用性，正文保持原样。');
+    results.push({ note, reasons, matchedKeywords });
+  }
+  return results;
+}
+
 function normalizeAliases(value) {
   if (!Array.isArray(value) || value.length > 1000) throw new Error('aliases扩展字段须为最多1000项的数组。');
   const seen = new Map();
@@ -317,7 +348,7 @@ function snapshot(notes, overrides, aliases = [], strict = false) {
 }
 export function makeBackup(notes, overrides, aliases = []) {
   safe({ notes, overrides, aliases });
-  return { application: 'moxi-notebook', schemaVersion: 2, exportedAt: new Date().toISOString(), ...snapshot(notes, overrides, aliases) };
+  return { application: 'moxi-notebook', schemaVersion: 3, exportedAt: new Date().toISOString(), ...snapshot(notes, overrides, aliases) };
 }
 function fullNoteKey(note) {
   const { id, createdAt, updatedAt, ...content } = note;
@@ -343,7 +374,7 @@ export function planImport(backup, currentNotes, currentOverrides, aliases = [])
   if (!object(incoming)) throw new Error('备份顶层须为对象。');
   if (incoming.application === 'moxi') throw new Error('这是旧版墨习v0.1学习记录备份，不是新版写法笔记备份。请保留原文件；本次不会修改现有数据。');
   if (incoming.application !== 'moxi-notebook') throw new Error('请选择墨习写法笔记备份，application应为moxi-notebook。');
-  if (![1, 2].includes(incoming.schemaVersion)) throw new Error('此备份版本暂不支持，请保留原文件并使用兼容版本。');
+  if (![1, 2, 3].includes(incoming.schemaVersion)) throw new Error('此备份版本暂不支持，请保留原文件并使用兼容版本。');
   onlyKeys(incoming, new Set(['application', 'schemaVersion', 'exportedAt', 'notes', 'overrides', 'aliases']), '备份');
   timestamp(incoming.exportedAt, null, '导出时间');
   if (!Array.isArray(incoming.overrides)) throw new Error('备份的overrides须为数组。');

@@ -1,11 +1,12 @@
-import { analyzeCharacter, matchNotes, normalizeNote, normalizeOverride, makeBackup, planImport, applyImport } from './model.js?v=0.3.0';
-import { readNotebook, saveNotebook, readPreviousNotebook } from './store.js?v=0.3.0';
+import { analyzeCharacter, matchNotes, matchStrokeNotes, normalizeNote, normalizeOverride, makeBackup, planImport, applyImport } from './model.js?v=0.4.0';
+import { readNotebook, saveNotebook, readPreviousNotebook } from './store.js?v=0.4.0';
 
 const $ = (id) => document.getElementById(id);
 const positions = { any: '不限位置', left: '左侧', right: '右侧', top: '上方', bottom: '下方', inside: '内部', outside: '外部', center: '中间', standalone: '独立成字' };
-const kinds = { character: '整字', component: '部件', structure: '结构' };
+const kinds = { character: '整字', component: '部件', structure: '结构', stroke: '笔画' };
 const commonNames = { 氵: '三点水', 扌: '提手旁', 讠: '言字旁', 亻: '单人旁', 忄: '竖心旁' };
 const state = { character: '永', metadata: {}, data: { notes: [], overrides: [], aliases: [] }, analysis: null, writer: null, strokeData: null, strokeIndex: -1, paused: false, loadVersion: 0, importPlan: null, confirmAction: null, unsaved: false };
+state.strokeNames = []; state.strokeNameSource = ''; state.manualStrokeNames = Object.create(null); state.strokeNameQuery = ''; state.animationRun = 0; state.strokeNameData = {}; state.resumePlayback = null;
 let toastTimer;
 function element(tag, className, text) { const el = document.createElement(tag); if (className) el.className = className; if (text !== undefined) el.textContent = String(text); return el; }
 function button(text, action, className = 'text-button') { const el = element('button', className, text); el.type = 'button'; el.addEventListener('click', action); return el; }
@@ -73,6 +74,42 @@ function renderMatches() {
     matches[key].forEach(({ note, reasons }) => group.append(noteCard(note, reasons || []))); $('matched-notes').append(group);
   }
 }
+function renderStrokeMatches() {
+  const container = $('stroke-matched-notes'); container.replaceChildren();
+  const name = $('stroke-name-input').value.trim();
+  if (!name) { container.append(element('p', 'small-note', '当前笔画名称未知。可选择或手动填写笔画名称后，查找分类中相关的个人笔记；系统不凭轨迹猜名字。')); return; }
+  let matches;
+  try { matches = matchStrokeNotes(name, state.data.notes); }
+  catch (error) { container.append(element('p', 'small-note error', `未检索：${error.message}`)); return; }
+  container.append(element('p', 'stroke-candidate-notice', `“${name}”相关候选 ${matches.length} 条。分类关键词只提示可能相关，复合笔画可命中多个词；请先核对形态、适用条件和来源。`));
+  for (const match of matches) {
+    const reasons = [...(match.reasons || [])];
+    if (match.matchedKeywords?.length) reasons.push(`相关关键词：${match.matchedKeywords.join('、')}`);
+    container.append(noteCard(match.note, reasons));
+  }
+  if (!matches.length) container.append(element('p', 'small-note', '暂无相关分类笔记。可到知识库通过唯一的“新建笔记”入口记录，再回到这里查看。'));
+}
+function syncStrokeName() {
+  const index = state.strokeIndex;
+  const manual = Object.hasOwn(state.manualStrokeNames, index);
+  $('stroke-name-input').value = manual ? state.manualStrokeNames[index] : index >= 0 ? state.strokeNames[index] || '' : state.strokeNameQuery;
+  $('stroke-name-source').textContent = manual || (index < 0 && state.strokeNameQuery) ? '手动填写 · 仅本次查字使用，不修改字库' : index >= 0 && state.strokeNames[index] ? `名称来源：${state.strokeNameSource || '逐笔名称数据'}` : '没有已确认的名称；可以手动选择，留空时不推测。';
+  renderStrokeMatches();
+}
+// Pass the character captured before an asynchronous data request to prevent
+// a late response from assigning another character's stroke names.
+function setStrokeNames(names, character = state.character, source = '逐笔名称数据') {
+  if (character !== state.character || !Array.isArray(names)) return false;
+  state.strokeNames = names.map((name) => typeof name === 'string' && /^\p{Script=Han}{1,20}$/u.test(name.trim()) ? name.trim() : '');
+  state.strokeNameSource = typeof source === 'string' ? source : '逐笔名称数据';
+  syncStrokeName(); return true;
+}
+function applyKnownStrokeNames() {
+  const names = state.strokeNameData[state.character];
+  if (!state.strokeData || !Array.isArray(names) || names.length !== state.strokeData.strokes.length) { state.strokeNames = []; state.strokeNameSource = ''; syncStrokeName(); return; }
+  setStrokeNames(names, state.character, 'CNChar 名称参考 · 可手动调整');
+}
+function nextAnimationRun() { state.animationRun += 1; state.resumePlayback?.(); state.resumePlayback = null; return state.animationRun; }
 function renderNotebook() {
   renderCategories();
   const query = $('note-search').value.trim().toLocaleLowerCase(); const kind = $('note-kind-filter').value;
@@ -89,7 +126,7 @@ function renderCategories() {
   for (const [value, label] of [['all', '全部分类'], ['uncategorized', '未分类'], ...categories.map((category) => [`category:${category}`, category])]) { const option = element('option', '', label); option.value = value; select.append(option); }
   select.value = [...select.options].some((option) => option.value === previous) ? previous : 'all';
   $('note-category-options').replaceChildren();
-  for (const category of [...new Set([...categories, '基本笔画', '偏旁练习', '间架结构', '易错字', '待整理'])]) { const option = element('option'); option.value = category; $('note-category-options').append(option); }
+  for (const category of [...new Set([...categories, '长横练习', '短横观察', '竖画', '基本笔画', '偏旁练习', '间架结构', '易错字', '待整理'])]) { const option = element('option'); option.value = category; $('note-category-options').append(option); }
 }
 function renderData() {
   $('total-notes').textContent = state.data.notes.length; $('total-overrides').textContent = state.data.overrides.length; $('total-aliases').textContent = state.data.aliases.length;
@@ -99,8 +136,8 @@ function renderData() {
   const previous = readPreviousNotebook(); $('restore-backup').disabled = !previous.data;
   $('restore-description').textContent = previous.data ? `上一份包含 ${previous.data.notes.length} 条笔记、${previous.data.overrides.length} 个字形修订。` : previous.error || '尚无上一份备份。保存第二次改动后会出现。';
 }
-function renderAll() { renderAnalysis(); renderMatches(); renderNotebook(); renderData(); }
-function updateNoteFields() { const component = $('note-kind').value === 'component'; $('note-position').disabled = !component; $('note-scope').disabled = !component; }
+function renderAll() { renderAnalysis(); renderMatches(); renderStrokeMatches(); renderNotebook(); renderData(); }
+function updateNoteFields() { const kind = $('note-kind').value; const component = kind === 'component'; $('note-position').disabled = !component; $('note-scope').disabled = !component; $('note-target').placeholder = kind === 'stroke' ? '例如：横 / 长横 / 横折钩' : '例如：永 / 氵 / 左右结构'; $('note-target-help').textContent = kind === 'stroke' ? '笔画用途可记录横、长横、横折钩等名称；当前笔画区按分类关键词提示相关候选。可将分类写成“长横练习”“短横观察”或“竖画”。' : '整字、部件、结构各按适用对象匹配；个人分类用于整理，当前笔画区另按分类关键词提示候选。'; }
 function fillPositions(select, value = 'any') { select.replaceChildren(); Object.entries(positions).forEach(([key, label]) => { const option = element('option', '', label); option.value = key; select.append(option); }); select.value = value in positions ? value : 'any'; }
 function openNote(note = {}) {
   $('note-form').reset(); $('note-id').value = note.id || ''; $('note-dialog-title').textContent = note.id ? '编辑书法笔记' : '新建书法笔记';
@@ -176,6 +213,7 @@ async function loadStrokeData() {
   const version = ++state.loadVersion; const character = state.character;
   state.svgObserver?.disconnect(); state.svgObserver = null;
   state.writer?.pauseAnimation(); state.writer = null; state.strokeData = null; state.strokeIndex = -1; state.paused = false;
+  nextAnimationRun(); syncStrokeName();
   $('writer-target').replaceChildren(); $('trajectory-layer').replaceChildren(); $('trajectory-layer').hidden = true; $('glyph-fallback').hidden = false; $('glyph-fallback').textContent = character; $('pause-button').textContent = '暂停'; $('stroke-position').textContent = '逐笔观察'; setStrokeControls(false); status('stroke-status', '正在加载笔顺数据…');
   try {
     const data = await fetchJSON(`./data/characters/${encodeURIComponent(character)}.json`); if (version !== state.loadVersion) return;
@@ -190,15 +228,41 @@ async function loadStrokeData() {
     });
     observer.observe(container, { childList: true, subtree: true }); state.svgObserver = observer;
     state.writer = window.HanziWriter.create('writer-target', character, { width: size, height: size, padding: 27, strokeColor: '#252821', outlineColor: '#ddd6c6', showCharacter: false, showOutline: true, strokeAnimationSpeed: Number($('animation-speed').value), delayBetweenStrokes: 380, charDataLoader: () => data });
-    $('glyph-fallback').hidden = true; setStrokeControls(true); status('stroke-status', `共 ${data.strokes.length} 笔 · 播放或逐笔观察`); renderAnalysis();
+    $('glyph-fallback').hidden = true; setStrokeControls(true); status('stroke-status', `共 ${data.strokes.length} 笔 · 播放或逐笔观察`); applyKnownStrokeNames(); renderAnalysis();
   } catch (error) { if (version !== state.loadVersion) return; state.svgObserver?.disconnect(); state.svgObserver = null; status('stroke-status', `暂无可用轨迹：本地未收录或加载失败。淡字仅为设备字体参考，不补造笔顺。${error.message === '动画组件未加载' ? '动画组件未加载。' : ''}`, true); renderAnalysis(); }
 }
-function playAll() {
-  if (!state.writer) return; const writer = state.writer; state.strokeIndex = -1; state.paused = false; $('pause-button').textContent = '暂停'; $('pause-button').disabled = false; $('trajectory-layer').hidden = true; $('stroke-position').textContent = '整字播放'; status('stroke-status', '按数据顺序播放，可暂停或逐笔观察。');
-  writer.animateCharacter({ onComplete: (result) => { if (!result?.canceled && state.writer === writer && state.strokeIndex === -1) { $('pause-button').disabled = true; status('stroke-status', `播放完成 · 共 ${state.strokeData.strokes.length} 笔`); } } });
+async function playAll() {
+  if (!state.writer || !state.strokeData) return; const writer = state.writer; const run = nextAnimationRun(); const count = state.strokeData.strokes.length;
+  state.paused = false; $('pause-button').textContent = '暂停'; $('pause-button').disabled = false;
+  try {
+    await writer.hideCharacter({ duration: 0 });
+    for (let index = 0; index < count; index += 1) {
+      if (run !== state.animationRun || writer !== state.writer) return;
+      if (state.paused) await new Promise((resolve) => { state.resumePlayback = resolve; });
+      if (run !== state.animationRun || writer !== state.writer) return;
+      state.strokeIndex = index; $('stroke-position').textContent = `第 ${index + 1} / ${count} 笔`; syncStrokeName(); updateTrajectory();
+      status('stroke-status', `第 ${index + 1} 笔 · ${$('stroke-name-input').value || '笔画名称未知'}`);
+      const result = await writer.animateStroke(index);
+      if (result?.canceled || run !== state.animationRun || writer !== state.writer) return;
+    }
+    if (run === state.animationRun) { $('pause-button').disabled = true; status('stroke-status', `播放完成 · 共 ${count} 笔`); }
+  } catch { animationFailed(run, writer); }
 }
-function playSingle(index) {
-  if (!state.writer || !state.strokeData) return; const writer = state.writer; writer.pauseAnimation(); const current = Math.max(0, Math.min(state.strokeData.strokes.length - 1, index)); state.strokeIndex = current; state.paused = false; $('pause-button').textContent = '暂停'; $('pause-button').disabled = false; $('stroke-position').textContent = `第 ${current + 1} / ${state.strokeData.strokes.length} 笔`; status('stroke-status', `第 ${current + 1} 笔 · 笔画名称未审校`); writer.hideCharacter({ duration: 0 }); writer.animateStroke(current, { onComplete: (result) => { if (!result?.canceled && state.writer === writer && state.strokeIndex === current) $('pause-button').disabled = true; } }); updateTrajectory();
+function animationFailed(run, writer) {
+  if (run !== state.animationRun || writer !== state.writer) return;
+  $('pause-button').disabled = true;
+  status('stroke-status', '动画播放失败，可以重播或重新查字。', true);
+}
+async function playSingle(index) {
+  if (!state.writer || !state.strokeData) return;
+  const run = nextAnimationRun(); const writer = state.writer; const current = Math.max(0, Math.min(state.strokeData.strokes.length - 1, index));
+  state.strokeIndex = current; state.paused = false; syncStrokeName(); $('pause-button').textContent = '暂停'; $('pause-button').disabled = false; $('stroke-position').textContent = `第 ${current + 1} / ${state.strokeData.strokes.length} 笔`; status('stroke-status', `第 ${current + 1} 笔 · ${$('stroke-name-input').value || '笔画名称未知'}`); updateTrajectory();
+  try {
+    await writer.hideCharacter({ duration: 0 });
+    if (run !== state.animationRun || writer !== state.writer) return;
+    const result = await writer.animateStroke(current);
+    if (!result?.canceled && run === state.animationRun && state.writer === writer) $('pause-button').disabled = true;
+  } catch { animationFailed(run, writer); }
 }
 function updateTrajectory() {
   const layer = $('trajectory-layer'); layer.replaceChildren(); const points = state.strokeData?.medians?.[state.strokeIndex];
@@ -209,7 +273,7 @@ function updateTrajectory() {
   const padding = 27 / ($('character-stage').clientWidth || 400) * 1024; const group = svg('g', { transform: `translate(${padding},${padding}) scale(${(1024 - 2 * padding) / 1024})` });
   group.append(svg('path', { d: filtered.map(([x, y], i) => `${i ? 'L' : 'M'}${x},${900 - y}`).join(' '), stroke: '#9E3C30', 'stroke-width': 6, fill: 'none', 'stroke-dasharray': '10 7', 'marker-end': 'url(#stroke-arrow)' }), svg('circle', { cx: filtered[0][0], cy: 900 - filtered[0][1], r: 12, fill: '#faf7ef', stroke: '#9E3C30', 'stroke-width': 5 })); layer.append(defs, group); layer.hidden = false;
 }
-function lookup(value) { const character = value.trim(); if (!validCharacter(character)) { status('lookup-status', '请输入一个汉字。', true); return; } state.character = character; $('character-input').value = character; status('lookup-status', state.metadata[character] ? '字形与拆分来自数据库参考；个人笔记按原文呈现。' : '数据库暂未提供该字信息，仍可手动修订、记录笔记；不补造轨迹或拆分。'); state.strokeData = null; renderAnalysis(); renderMatches(); loadStrokeData(); }
+function lookup(value) { const character = value.trim(); if (!validCharacter(character)) { status('lookup-status', '请输入一个汉字。', true); return; } state.character = character; state.strokeNames = []; state.strokeNameSource = ''; state.manualStrokeNames = Object.create(null); state.strokeNameQuery = ''; $('character-input').value = character; status('lookup-status', state.metadata[character] ? '字形与拆分来自数据库参考；个人笔记按原文呈现。' : '数据库暂未提供该字信息，仍可手动修订、记录笔记；不补造轨迹或拆分。'); state.strokeData = null; renderAnalysis(); renderMatches(); loadStrokeData(); }
 
 document.querySelectorAll('.nav-button').forEach((el) => el.addEventListener('click', () => showPage(el.dataset.page)));
 document.querySelector('.brand').addEventListener('click', (event) => { event.preventDefault(); showPage('lookup'); });
@@ -218,13 +282,14 @@ $('lookup-form').addEventListener('submit', (event) => { event.preventDefault();
 $('new-note').addEventListener('click', () => openNote({ kind: 'character', target: state.character })); $('open-notebook').addEventListener('click', () => showPage('notebook'));
 $('note-form').addEventListener('submit', saveNote); $('note-kind').addEventListener('change', updateNoteFields); $('note-search').addEventListener('input', renderNotebook); $('note-kind-filter').addEventListener('change', renderNotebook);
 $('note-category-filter').addEventListener('change', renderNotebook);
+$('stroke-name-input').addEventListener('input', () => { const name = $('stroke-name-input').value.slice(0, 40); if (state.strokeIndex >= 0) state.manualStrokeNames[state.strokeIndex] = name; else state.strokeNameQuery = name; $('stroke-name-source').textContent = name ? '手动填写 · 仅本次查字使用，不修改字库' : '名称留空，不推测当前笔画名称。'; renderStrokeMatches(); });
 $('edit-character').addEventListener('click', openOverride); $('override-form').addEventListener('submit', saveOverride); $('add-override-component').addEventListener('click', () => addComponentRow());
 $('reset-override').addEventListener('click', () => { const character = $('override-character').value; confirmAction('恢复数据库分析？', `将移除“${character}”的个人修订，笔记保留。`, () => { commit({ ...state.data, overrides: state.data.overrides.filter((o) => o.character !== character) }, '已恢复数据库分析。'); closeDialog('override-dialog'); }, '确认恢复'); });
 $('confirm-no').addEventListener('click', () => { state.confirmAction = null; closeDialog('confirm-dialog'); }); $('confirm-yes').addEventListener('click', () => { const action = state.confirmAction; state.confirmAction = null; closeDialog('confirm-dialog'); action?.(); }); $('confirm-dialog').addEventListener('cancel', () => { state.confirmAction = null; });
 $('export-backup').addEventListener('click', () => exportData()); $('emergency-export').addEventListener('click', () => exportData(true)); document.querySelectorAll('input[name="export-scope"]').forEach((el) => el.addEventListener('change', () => { $('export-selection').hidden = document.querySelector('input[name="export-scope"]:checked').value !== 'selected'; }));
 $('import-file').addEventListener('change', previewImport); $('confirm-import').addEventListener('click', confirmImport); $('cancel-import').addEventListener('click', () => { state.importPlan = null; $('import-preview').hidden = true; status('import-status', '导入已取消，未改动数据。'); });
 $('restore-backup').addEventListener('click', () => { const previous = readPreviousNotebook(); if (!previous.data) return; confirmAction('恢复上一份数据？', `将用上一份的 ${previous.data.notes.length} 条笔记和 ${previous.data.overrides.length} 个修订替换当前数据。建议先导出当前备份。`, () => { try { const data = previous.data; const validated = applyImport(planImport(makeBackup(data.notes, data.overrides, data.aliases), [], [], [])); commit(validated, '已恢复上一份数据。'); } catch (error) { toast(`恢复失败，当前数据未改动：${error.message}`); } }, '确认恢复'); });
-$('play-button').addEventListener('click', playAll); $('replay-button').addEventListener('click', playAll); $('pause-button').addEventListener('click', () => { if (!state.writer) return; state.paused = !state.paused; if (state.paused) state.writer.pauseAnimation(); else state.writer.resumeAnimation(); $('pause-button').textContent = state.paused ? '继续' : '暂停'; }); $('previous-stroke').addEventListener('click', () => playSingle(state.strokeIndex < 0 ? 0 : state.strokeIndex - 1)); $('next-stroke').addEventListener('click', () => playSingle(state.strokeIndex + 1)); $('show-trajectory').addEventListener('change', () => { if ($('show-trajectory').checked && state.strokeIndex < 0) playSingle(0); else updateTrajectory(); }); $('display-grid').addEventListener('change', () => { $('character-stage').className = `character-stage grid-${$('display-grid').value}`; }); $('animation-speed').addEventListener('change', loadStrokeData);
+$('play-button').addEventListener('click', playAll); $('replay-button').addEventListener('click', playAll); $('pause-button').addEventListener('click', () => { if (!state.writer) return; state.paused = !state.paused; if (state.paused) state.writer.pauseAnimation(); else { state.writer.resumeAnimation(); state.resumePlayback?.(); state.resumePlayback = null; } $('pause-button').textContent = state.paused ? '继续' : '暂停'; }); $('previous-stroke').addEventListener('click', () => playSingle(state.strokeIndex < 0 ? 0 : state.strokeIndex - 1)); $('next-stroke').addEventListener('click', () => playSingle(state.strokeIndex + 1)); $('show-trajectory').addEventListener('change', () => { if ($('show-trajectory').checked && state.strokeIndex < 0) playSingle(0); else updateTrajectory(); }); $('display-grid').addEventListener('change', () => { $('character-stage').className = `character-stage grid-${$('display-grid').value}`; }); $('animation-speed').addEventListener('change', loadStrokeData);
 window.addEventListener('beforeunload', (event) => { state.writer?.pauseAnimation(); if (state.unsaved) { event.preventDefault(); event.returnValue = ''; } });
 fillPositions($('note-position'));
 const loaded = readNotebook();
@@ -232,4 +297,5 @@ try { const backup = makeBackup(loaded.data.notes, loaded.data.overrides, loaded
 if (loaded.error) showStorageFailure(loaded.error);
 renderAll(); lookup('永');
 fetchJSON('./data/characters.json', { cache: 'no-cache' }).then((data) => { if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('字典格式无效'); state.metadata = data; renderAnalysis(); renderMatches(); status('lookup-status', state.metadata[state.character] ? '字形与拆分来自数据库参考；个人笔记按原文呈现。' : '数据库未收录，仍可手动修订并记录笔记。'); }).catch(() => status('lookup-status', '字典暂未加载。可手动修订和记录；请通过 HTTP 服务打开网页。', true));
+fetchJSON('./data/stroke-names.json', { cache: 'no-cache' }).then((data) => { if (data?.schemaVersion === 1 && data.characters && typeof data.characters === 'object' && !Array.isArray(data.characters)) state.strokeNameData = data.characters; applyKnownStrokeNames(); }).catch(() => { state.strokeNameData = {}; applyKnownStrokeNames(); });
 const initialPage = location.hash.slice(1); if (['lookup', 'notebook', 'data'].includes(initialPage)) showPage(initialPage);
