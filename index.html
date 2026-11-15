@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f0e8">
+  <title>墨习 · 教材有据，落笔有章</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./vendor/hanzi-writer.min.js" defer></script>
+  <script type="module" src="./app.js"></script>
+  <script type="module" src="./pdf-local.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#learn" aria-label="墨习首页"><span class="brand-seal" aria-hidden="true">墨</span><span class="brand-name">墨习<small>教材有据，落笔有章</small></span></a>
+    <nav class="main-nav" aria-label="主导航">
+      <button class="nav-item active" data-page="learn" aria-current="page"><span aria-hidden="true">字</span>学字</button>
+      <button class="nav-item" data-page="practice"><span aria-hidden="true">笔</span>练字</button>
+      <button class="nav-item" data-page="mine"><span aria-hidden="true">册</span>我的</button>
+    </nav>
+    <span class="local-badge"><i></i>本地学习空间</span>
+  </header>
+
+  <main class="main-shell">
+    <section id="page-learn" class="page active" aria-label="学字">
+      <div class="page-intro">
+        <div><p class="eyebrow">观其形 · 明其理 · 习其法</p><h1>一字一课，循据而学。</h1><p class="intro-copy">先看笔顺与结构，再沿着教材证据，找到落笔的方法。</p></div>
+        <form id="search-form" class="search-form"><label for="character-input">今天，想写哪个字？</label><div class="search-input-wrap"><input id="character-input" name="character" value="永" maxlength="4" autocomplete="off" spellcheck="false" aria-describedby="search-feedback"><button class="primary-button" type="submit">开始学字 <span aria-hidden="true">↗</span></button></div><p id="search-feedback" class="field-note" role="status">输入一个汉字，查看可用的笔顺与教材知识。</p></form>
+      </div>
+
+      <div class="learning-grid">
+        <section class="panel character-panel" aria-labelledby="stroke-heading">
+          <div class="panel-heading"><div><p class="eyebrow">01 / 观字</p><h2 id="stroke-heading">笔顺与字形</h2></div><button id="bookmark-button" class="icon-button" aria-label="收藏当前汉字" aria-pressed="false" title="收藏当前汉字">☆</button></div>
+          <div class="reference-label"><span class="tiny-dot"></span>通用笔顺参考 · 非教材书家真迹</div>
+          <div id="character-stage" class="character-stage grid-tian"><div id="writer-target"></div><div id="glyph-fallback" class="glyph-fallback">永</div><svg id="trajectory-layer" viewBox="0 0 1024 1024" aria-label="当前笔画中线轨迹" hidden></svg></div>
+          <p id="stroke-status" class="stroke-status" role="status">正在加载笔顺数据…</p>
+          <div class="stroke-controls"><button id="previous-stroke" class="small-button" title="上一笔" aria-label="上一笔">←</button><button id="play-button" class="primary-button">播放笔顺</button><button id="pause-button" class="small-button" disabled>暂停</button><button id="next-stroke" class="small-button" title="下一笔" aria-label="下一笔">→</button></div>
+          <div class="writer-options"><label>速度<select id="animation-speed"><option value="0.7">慢速</option><option value="1" selected>适中</option><option value="1.7">快速</option></select></label><label><input id="show-trajectory" type="checkbox">单笔轨迹</label><label>格型<select id="display-grid"><option value="tian">田字格</option><option value="mi">米字格</option><option value="none">无格</option></select></label></div>
+          <p class="source-footnote">数据：Make Me a Hanzi / Hanzi Writer。笔画名称未审校时不作猜测；动画中线不代表毛笔真实运笔。</p>
+          <button class="text-button practice-current" type="button">去临摹这个字 <span aria-hidden="true">→</span></button>
+        </section>
+
+        <div class="learning-main">
+          <section class="panel character-facts" aria-labelledby="facts-heading"><div class="panel-heading"><div><p class="eyebrow">02 / 析形</p><h2 id="facts-heading"><span id="current-character">永</span><span class="heading-divider">/</span>认识这个字</h2></div><span id="fact-review" class="badge neutral">基础数据</span></div><div class="facts-grid"><div><span>笔画数</span><strong id="fact-count">—</strong></div><div><span>部首</span><strong id="fact-radical">—</strong></div><div><span>IDS 结构参考</span><strong id="fact-structure">—</strong></div></div><div class="decomposition-row"><span>部件拆分 <small>IDS</small></span><strong id="fact-decomposition">—</strong></div><p id="fact-source" class="source-footnote"></p><p class="boundary-note">IDS 描述部件组合关系，不等于汉字学或教材中的教学结构分类；交叠拆分也不能直接当作本字的教学结构结论。空间比例、视觉重心与疏密须结合具体范字观察。</p></section>
+
+          <section class="panel knowledge-panel" aria-labelledby="knowledge-heading"><div class="panel-heading"><div><p class="eyebrow">03 / 寻据</p><h2 id="knowledge-heading">从教材中，找到写法</h2></div><span id="knowledge-count" class="badge neutral">检索中</span></div><div class="knowledge-toolbar"><label for="book-filter">教材范围</label><select id="book-filter"><option value="all">全部已整理教材</option></select></div><div id="evidence-summary" class="evidence-summary" role="status"></div><div id="rule-list" class="rule-list"></div><div class="evidence-legend"><span><i class="legend-direct"></i>原文转述</span><span><i class="legend-observation"></i>范字观察</span><span><i class="legend-transfer"></i>本字迁移建议</span></div><p class="source-footnote">仅检索当前已提取的记录。匹配到相同部件或结构，并不自动证明规则适用于全部汉字。</p></section>
+        </div>
+      </div>
+
+      <section class="panel teacher-panel" aria-labelledby="teacher-heading"><div class="teacher-heading"><div><p class="eyebrow">04 / 问学</p><h2 id="teacher-heading">有据可循的 AI 书法老师</h2><p>让教材提供依据，让推演保持可辨。</p></div><span id="ai-state-badge" class="badge neutral">尚未连接 AI</span></div><div id="ai-privacy-note" class="ai-disclosure">AI 默认为关闭。配置接口后，点击提问才会发送当前汉字、问题和规则 ID；本页面不上传教材 PDF 或手写照片。</div><form id="teacher-form" class="teacher-form"><label class="sr-only" for="teacher-question">向老师提问（最多800字符）</label><textarea id="teacher-question" rows="2" maxlength="800" placeholder="例如：这个字的结构应该怎样安排？有哪些地方需要重点练习？（最多800字符）"></textarea><div class="teacher-actions"><button id="open-ai-settings" class="text-button" type="button">配置教学接口 ↗</button><div><button id="cancel-teaching" class="small-button" type="button" hidden>取消</button><button id="generate-teaching" class="primary-button" type="submit">生成教材教学</button></div></div></form><p id="teacher-status" class="field-note" role="status"></p><div id="teacher-response" class="teacher-response" aria-live="polite"></div></section>
+    </section>
+
+    <section id="page-practice" class="page" aria-label="练字" hidden>
+      <div class="page-intro compact-intro"><div><p class="eyebrow">知法之后 · 落笔有章</p><h1>静心临写，逐笔体会。</h1><p class="intro-copy">把观察变成练习。屏幕临摹用于练习结构与位置。</p></div><div class="practice-character-picker"><label for="practice-character-input">当前练习</label><form id="practice-search-form"><input id="practice-character-input" value="永" maxlength="4" aria-label="练习汉字"><button type="submit" class="small-button">换字</button></form></div></div>
+      <div class="practice-layout"><section class="panel writing-panel"><div class="panel-heading"><div><p class="eyebrow">临写画板</p><h2><span id="practice-character-label">永</span><span class="heading-divider">/</span>笔下见功夫</h2></div><span class="badge neutral">触控 / 鼠标 / 手写笔</span></div><div class="canvas-wrap"><canvas id="practice-canvas" width="720" height="720" aria-label="汉字书写画板，可用鼠标、触控或手写笔书写">您的浏览器不支持画板。</canvas></div><div class="canvas-toolbar"><label>格型<select id="practice-grid"><option value="tian">田字格</option><option value="mi">米字格</option><option value="none">空白</option></select></label><label><input id="practice-guide" type="checkbox" checked>淡描参考</label><label>笔宽<input id="brush-width" type="range" min="2" max="20" value="7" aria-label="笔宽"></label></div><div class="canvas-actions"><div><button id="undo-drawing" class="small-button">撤销</button><button id="clear-drawing" class="small-button">清空画板</button></div><button id="save-drawing" class="primary-button">保存练习 PNG ↓</button></div><p id="practice-status" class="field-note" role="status"></p><p class="source-footnote">淡描使用设备通用楷体或系统字体，仅为字形参考，不代表所选教材书家的字迹。保存图片含此来源说明。</p></section><aside class="practice-aside"><section class="panel practice-guidance"><p class="eyebrow">今日练习建议</p><h2>先观察，再落笔</h2><ol><li><strong>看整体</strong><p>观察外形、主要部件与留白。</p></li><li><strong>看关系</strong><p>对照教材证据，选一条有依据的规律练习。</p></li><li><strong>作比较</strong><p>每次只调整一个可观察的问题。</p></li></ol><div id="practice-rule-tip" class="practice-rule-tip"></div><button class="text-button" id="back-to-learning">回看本字教学 →</button></section><section class="panel photo-panel"><p class="eyebrow">纸上练习</p><h2>保留一张手写照片</h2><p>选择本地照片，便于对照观察。照片只在当前浏览器预览。</p><label class="upload-button" for="practice-photo">＋ 选择手写照片</label><input type="file" id="practice-photo" accept="image/png,image/jpeg,image/webp" hidden><img id="photo-preview" alt="本地手写练习照片" hidden><p id="photo-status" class="field-note"></p><p class="boundary-note">本版尚未接入照片评价，不生成评分。单张静态照片无法准确还原笔顺、笔锋、运笔力度或速度。</p></section></aside></div>
+    </section>
+
+    <section id="page-mine" class="page" aria-label="我的" hidden>
+      <div class="page-intro compact-intro"><div><p class="eyebrow">寸积铢累 · 日有所进</p><h1>留一册，自己的学书记录。</h1><p class="intro-copy">收藏与学习记录保存在当前浏览器，可导出备份。</p></div><div class="record-summary"><strong id="record-total">0</strong><span>次学习与练习</span></div></div>
+      <div class="mine-grid"><section class="panel favorites-panel"><div class="panel-heading"><h2>收藏的汉字</h2><span id="favorite-count" class="badge neutral">0 字</span></div><div id="favorite-list" class="favorite-list"></div></section><section class="panel records-panel"><div class="panel-heading"><h2>学习足迹</h2><div class="inline-buttons"><button id="export-records" class="text-button">导出记录</button><label for="import-records" class="text-button file-label">导入备份</label><input id="import-records" type="file" accept="application/json,.json" hidden></div></div><div id="record-list" class="record-list"></div><p id="records-status" class="field-note" role="status"></p></section></div>
+      <section class="panel books-panel"><div class="panel-heading"><div><p class="eyebrow">知识来源</p><h2>教材与证据</h2></div><span id="books-count" class="badge neutral">0 本教材</span></div><p class="section-description">教学规则绑定到教材、页码与证据类型。当前已整理教材以硬笔楷书为主，不据此判断毛笔笔锋与力度。请仅使用拥有合法使用权的教材。</p><div id="book-list" class="book-list"></div><div id="pdf-manager"></div><p class="boundary-note">“页面已核对”表示本轮 AI 对页面图像作过目视核对，并非书法专家审核。规则为教材转述或范字观察；练习建议由系统据此设计，不是教材原文。教材原件不随网页公开；本地预览不等于已完成全书分析。</p></section>
+      <section id="ai-settings" class="panel settings-panel"><div><p class="eyebrow">可选功能</p><h2>AI 教学接口</h2><p class="section-description">填写你部署的后端服务地址，由后端保管供应商密钥。下方访问码只用于你的教学接口，不是大模型供应商密钥。</p></div><form id="settings-form"><label for="api-endpoint">服务地址</label><input id="api-endpoint" type="url" placeholder="http://localhost:8000" autocomplete="off" spellcheck="false"><p class="field-note">支持 HTTPS 或本机 localhost 地址；请求路径为 /teach。</p><label for="api-access-code">接口访问码（可选，仅当前会话保存）</label><input id="api-access-code" type="password" placeholder="由教学接口部署者提供" autocomplete="off" spellcheck="false"><p class="field-note">访问码仅保存在本页内存，刷新即清除，不写入记录或导出文件。</p><div class="inline-buttons"><button class="primary-button" type="submit">保存设置</button><button id="disable-ai" class="small-button" type="button">关闭 AI</button></div><p id="settings-status" class="field-note" role="status"></p></form></section>
+      <section class="about-note"><span class="brand-seal small-seal" aria-hidden="true">墨</span><p>教材有据，落笔有章。<small>原文证据、范字观察与 AI 推演分别标明；缺少证据时，明确保留未知。</small></p></section>
+    </section>
+  </main>
+  <footer class="site-footer"><span>墨习 · AI 智能书法学习原型</span><span>尊重教材版权 · 尊重书写规律 · 尊重每一次练习</span></footer>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>

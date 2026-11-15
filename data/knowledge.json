@@ -1,0 +1,2000 @@
+{
+  "version": "2026-11-15.v1",
+  "books": [
+    {
+      "id": "atlas",
+      "title": "卢中南5000常用字楷书字帖",
+      "fileName": "卢中南5000常用字楷书字帖.pdf",
+      "pageCount": 36,
+      "sha256": "9cc54879fc28e59c91dc1be594e3c7d19ee916268cafb9f766bb363c1831908f",
+      "reviewedPages": [
+        1,
+        2
+      ],
+      "scope": "硬笔楷书教学与结构参考；所列摘要仅覆盖已核对页面。",
+      "localOnly": true,
+      "reviewMethod": "本轮AI对照扫描页目视核对，非书法专家审定"
+    },
+    {
+      "id": "strokes",
+      "title": "卢中南教你写一手好字·笔画偏旁",
+      "fileName": "254 卢中南教你写一手好字-笔画偏旁.pdf",
+      "pageCount": 48,
+      "sha256": "3ea7c89abbf0c46f9bf88cbe32032e359e9f2f11486e2bff802f8a3b2e8bd771",
+      "reviewedPages": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        15,
+        18,
+        22,
+        28,
+        34
+      ],
+      "scope": "硬笔楷书教学与结构参考；所列摘要仅覆盖已核对页面。",
+      "localOnly": true,
+      "reviewMethod": "本轮AI对照扫描页目视核对，非书法专家审定"
+    },
+    {
+      "id": "structure",
+      "title": "卢中南教你写一手好字·间架结构",
+      "fileName": "255 卢中南教你写一手好字-间架结构.pdf",
+      "pageCount": 48,
+      "sha256": "bffeb746d3db7b0d70e5ab15fda2b929fb48cf4ca4441cc3fd3fe4ac719811f8",
+      "reviewedPages": [
+        3,
+        4,
+        5,
+        6,
+        8,
+        9,
+        11,
+        12,
+        13,
+        16,
+        17,
+        18,
+        21,
+        22,
+        23,
+        24
+      ],
+      "scope": "硬笔楷书教学与结构参考；所列摘要仅覆盖已核对页面。",
+      "localOnly": true,
+      "reviewMethod": "本轮AI对照扫描页目视核对，非书法专家审定"
+    }
+  ],
+  "rules": [
+    {
+      "id": "atlas-001",
+      "bookId": "atlas",
+      "pdfPage": 1,
+      "printedPage": "11",
+      "title": "方形字的外廓",
+      "kind": "paraphrase",
+      "topics": [
+        "间架结构",
+        "外廓",
+        "比例"
+      ],
+      "structures": [
+        "包围结构"
+      ],
+      "components": [],
+      "characters": [
+        "回",
+        "四",
+        "目",
+        "囚",
+        "困",
+        "国"
+      ],
+      "text": "本页将方形列为一种外廓类型，提示避免把这类字写成长形或扁形，并注意两侧竖画下段的收束。",
+      "conditions": "只适用于本页所列方形例字及经原页确认同类的字，不能作为全部包围结构的统一要求。",
+      "practice": "本站练习建议：先在本地打开原页，选择本条列出的一个范字，比较其外廓与部件关系，再临写并复查。",
+      "reviewed": true,
+      "sourceNote": "已由AI目视核对该文件PDF第1页（页脚11）的分类表。text为简短摘要，非原文逐字引用；practice为本站建议，不代表作者原话。仅核对部分页面，未完成5000字索引，亦未通过书法专家审定。"
+    },
+    {
+      "id": "atlas-002",
+      "bookId": "atlas",
+      "pdfPage": 1,
+      "printedPage": "11",
+      "title": "梯形外廓的上窄下宽",
+      "kind": "paraphrase",
+      "topics": [
+        "间架结构",
+        "外廓",
+        "比例"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "五",
+        "无",
+        "元",
+        "互",
+        "兄",
+        "益"
+      ],
+      "text": "本页以梯形概括一类字的整体形状，提示上部较窄、下部较宽，不把外廓写成正方形。",
+      "conditions": "仅在字形属于此类外廓时参考，不能据结构名称自动判定梯形，也不适用于所有独体字。",
+      "practice": "本站练习建议：先在本地打开原页，选择本条列出的一个范字，比较其外廓与部件关系，再临写并复查。",
+      "reviewed": true,
+      "sourceNote": "已由AI目视核对该文件PDF第1页（页脚11）的分类表。text为简短摘要，非原文逐字引用；practice为本站建议，不代表作者原话。仅核对部分页面，未完成5000字索引，亦未通过书法专家审定。"
+    },
+    {
+      "id": "atlas-003",
+      "bookId": "atlas",
+      "pdfPage": 1,
+      "printedPage": "11",
+      "title": "左右相等是一种布局类别",
+      "kind": "paraphrase",
+      "topics": [
+        "间架结构",
+        "外廓",
+        "比例"
+      ],
+      "structures": [
+        "左右结构"
+      ],
+      "components": [],
+      "characters": [
+        "朝",
+        "殷",
+        "群",
+        "触",
+        "解",
+        "毁"
+      ],
+      "text": "本页把左右两部分宽度接近的字列为一类，示意两侧各占约一半的布局。",
+      "conditions": "约一半是本页该类别的示意，不能推广到所有左右结构字；需先核对部件形态及范字。",
+      "practice": "本站练习建议：先在本地打开原页，选择本条列出的一个范字，比较其外廓与部件关系，再临写并复查。",
+      "reviewed": true,
+      "sourceNote": "已由AI目视核对该文件PDF第1页（页脚11）的分类表。text为简短摘要，非原文逐字引用；practice为本站建议，不代表作者原话。仅核对部分页面，未完成5000字索引，亦未通过书法专家审定。"
+    },
+    {
+      "id": "atlas-004",
+      "bookId": "atlas",
+      "pdfPage": 1,
+      "printedPage": "11",
+      "title": "左窄右宽须先确认所属类别",
+      "kind": "paraphrase",
+      "topics": [
+        "间架结构",
+        "外廓",
+        "比例"
+      ],
+      "structures": [
+        "左右结构"
+      ],
+      "components": [],
+      "characters": [
+        "流",
+        "派",
+        "拨",
+        "保",
+        "帅"
+      ],
+      "text": "本页把左窄右宽列为独立类别，示意左部约占三分之一、右部约占三分之二。",
+      "conditions": "仅适用于已确认属于左窄右宽的字。比例为类别示意，不能对任意左右结构字机械套用。",
+      "practice": "本站练习建议：先在本地打开原页，选择本条列出的一个范字，比较其外廓与部件关系，再临写并复查。",
+      "reviewed": true,
+      "sourceNote": "已由AI目视核对该文件PDF第1页（页脚11）的分类表。text为简短摘要，非原文逐字引用；practice为本站建议，不代表作者原话。仅核对部分页面，未完成5000字索引，亦未通过书法专家审定。"
+    },
+    {
+      "id": "atlas-005",
+      "bookId": "atlas",
+      "pdfPage": 1,
+      "printedPage": "11",
+      "title": "左右部件的高低与长短",
+      "kind": "paraphrase",
+      "topics": [
+        "间架结构",
+        "外廓",
+        "比例"
+      ],
+      "structures": [
+        "左右结构"
+      ],
+      "components": [],
+      "characters": [
+        "初",
+        "如",
+        "和",
+        "红",
+        "扛"
+      ],
+      "text": "本页另列左长右短的类别，说明除宽度外还需比较左右两部分的长度及底部位置。",
+      "conditions": "适用于原页左长右短的例字类别，不能认为所有左偏旁都要更长。",
+      "practice": "本站练习建议：先在本地打开原页，选择本条列出的一个范字，比较其外廓与部件关系，再临写并复查。",
+      "reviewed": true,
+      "sourceNote": "已由AI目视核对该文件PDF第1页（页脚11）的分类表。text为简短摘要，非原文逐字引用；practice为本站建议，不代表作者原话。仅核对部分页面，未完成5000字索引，亦未通过书法专家审定。"
+    },
+    {
+      "id": "atlas-006",
+      "bookId": "atlas",
+      "pdfPage": 1,
+      "printedPage": "11",
+      "title": "上下相等是一种布局类别",
+      "kind": "paraphrase",
+      "topics": [
+        "间架结构",
+        "外廓",
+        "比例"
+      ],
+      "structures": [
+        "上下结构"
+      ],
+      "components": [],
+      "characters": [
+        "表",
+        "去",
+        "志",
+        "至",
+        "音",
+        "美"
+      ],
+      "text": "本页将上下两部分高度接近的字归为一类，用约各占一半的比例作布局提示。",
+      "conditions": "只对本页此类上下结构字适用；应与上高下矮等其他类别区别。",
+      "practice": "本站练习建议：先在本地打开原页，选择本条列出的一个范字，比较其外廓与部件关系，再临写并复查。",
+      "reviewed": true,
+      "sourceNote": "已由AI目视核对该文件PDF第1页（页脚11）的分类表。text为简短摘要，非原文逐字引用；practice为本站建议，不代表作者原话。仅核对部分页面，未完成5000字索引，亦未通过书法专家审定。"
+    },
+    {
+      "id": "atlas-007",
+      "bookId": "atlas",
+      "pdfPage": 1,
+      "printedPage": "11",
+      "title": "上高下矮与上下均分有区别",
+      "kind": "paraphrase",
+      "topics": [
+        "间架结构",
+        "外廓",
+        "比例"
+      ],
+      "structures": [
+        "上下结构"
+      ],
+      "components": [],
+      "characters": [
+        "黑",
+        "真",
+        "基",
+        "烈",
+        "煎",
+        "悬"
+      ],
+      "text": "本页另列上高下矮的字例，示意上部约占三分之二、下部约占三分之一。",
+      "conditions": "本条不与上下均分同时套用。先辨明具体字的所属类别，再参考约略比例。",
+      "practice": "本站练习建议：先在本地打开原页，选择本条列出的一个范字，比较其外廓与部件关系，再临写并复查。",
+      "reviewed": true,
+      "sourceNote": "已由AI目视核对该文件PDF第1页（页脚11）的分类表。text为简短摘要，非原文逐字引用；practice为本站建议，不代表作者原话。仅核对部分页面，未完成5000字索引，亦未通过书法专家审定。"
+    },
+    {
+      "id": "atlas-008",
+      "bookId": "atlas",
+      "pdfPage": 1,
+      "printedPage": "11",
+      "title": "上宽下窄的整体观察",
+      "kind": "paraphrase",
+      "topics": [
+        "间架结构",
+        "外廓",
+        "比例"
+      ],
+      "structures": [
+        "上下结构"
+      ],
+      "components": [],
+      "characters": [
+        "祭",
+        "夯",
+        "卷",
+        "食",
+        "春",
+        "昔"
+      ],
+      "text": "本页以一组字例说明上部较宽、下部较窄的外廓关系，提示从全字观察两部的宽窄。",
+      "conditions": "外廓宽窄与部件高度是不同维度，须结合范字核查；不推定作者未写出的字也有相同比例。",
+      "practice": "本站练习建议：先在本地打开原页，选择本条列出的一个范字，比较其外廓与部件关系，再临写并复查。",
+      "reviewed": true,
+      "sourceNote": "已由AI目视核对该文件PDF第1页（页脚11）的分类表。text为简短摘要，非原文逐字引用；practice为本站建议，不代表作者原话。仅核对部分页面，未完成5000字索引，亦未通过书法专家审定。"
+    },
+    {
+      "id": "atlas-009",
+      "bookId": "atlas",
+      "pdfPage": 2,
+      "printedPage": "12",
+      "title": "按笔画数编排的范字页",
+      "kind": "observation",
+      "topics": [
+        "范字观察"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "一",
+        "乙",
+        "二",
+        "十",
+        "丁",
+        "厂",
+        "七",
+        "卜",
+        "八",
+        "人",
+        "入",
+        "儿",
+        "九",
+        "匕",
+        "几",
+        "刀",
+        "了",
+        "乃",
+        "力",
+        "又",
+        "三",
+        "千",
+        "于",
+        "亏",
+        "士",
+        "土",
+        "工",
+        "才",
+        "下",
+        "寸",
+        "丈",
+        "大",
+        "兀",
+        "与",
+        "万",
+        "戈",
+        "上",
+        "小",
+        "口",
+        "山",
+        "巾",
+        "干",
+        "乞",
+        "川",
+        "亿",
+        "个",
+        "久",
+        "勺",
+        "丸",
+        "夕",
+        "凡",
+        "及",
+        "广",
+        "亡",
+        "门",
+        "义",
+        "之",
+        "尸",
+        "已",
+        "己",
+        "弓",
+        "卫",
+        "子",
+        "也",
+        "女",
+        "飞",
+        "刃",
+        "习",
+        "叉",
+        "马",
+        "乡",
+        "丰",
+        "王",
+        "井",
+        "开",
+        "夫",
+        "天",
+        "元",
+        "云",
+        "扎",
+        "艺",
+        "木",
+        "支",
+        "斤",
+        "不",
+        "太",
+        "犬",
+        "区",
+        "历",
+        "友",
+        "歹",
+        "尤",
+        "匹",
+        "厄",
+        "车",
+        "巨",
+        "牙",
+        "屯",
+        "比",
+        "互",
+        "切",
+        "瓦",
+        "止",
+        "少",
+        "曰",
+        "中",
+        "贝",
+        "内",
+        "水",
+        "冈",
+        "见",
+        "手",
+        "午",
+        "牛",
+        "毛",
+        "气",
+        "升",
+        "夭",
+        "长",
+        "仁",
+        "什",
+        "片",
+        "仆"
+      ],
+      "text": "本页以“一画”“二画”“三画”“四画”等分组排列楷书范字，可用于本地对照观察。",
+      "conditions": "这是页面编排观察，不是新增的笔顺规则。范字出现不表示本页给出了逐笔教学。",
+      "practice": "本站练习建议：在本地原页选择一字，先观察轮廓，再写一遍并对照。",
+      "reviewed": true,
+      "sourceNote": "AI目视核对PDF第2页（页脚12），characters仅列清晰可辨的部分例字，非完整转录。未公开裁图；本条不提供作者未注明的书写过程。"
+    },
+    {
+      "id": "strokes-001",
+      "bookId": "strokes",
+      "pdfPage": 2,
+      "printedPage": "001",
+      "title": "从描红、摹影走向临写",
+      "kind": "paraphrase",
+      "topics": [
+        "学习方法",
+        "临写"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [],
+      "text": "入门页分别说明描红、摹影与临写，将临写视为训练观察、用笔和结构的重要方法，描红与摹影用于辅助临写。",
+      "practice": "先观察一个范字，再临写一遍；与范字比较后，只选一个笔画或结构问题重写。",
+      "conditions": "本书为硬笔楷书语境。本条总结入门方法，不包含作者对某一具体汉字的评价。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第2页、页脚001。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-002",
+      "bookId": "strokes",
+      "pdfPage": 3,
+      "printedPage": "002",
+      "title": "斜点与垂点须服从所在位置",
+      "kind": "paraphrase",
+      "topics": [
+        "笔法",
+        "点"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "义",
+        "大",
+        "小",
+        "亦"
+      ],
+      "text": "斜点向右下运行，逐渐加重后收笔；垂点多与斜点相配，向下略偏左，形体不宜过大，应与全字协调。",
+      "practice": "分别临写“义”与“小”，比较两类点的方向和大小，再检查点与主笔是否协调。",
+      "conditions": "本书为硬笔楷书语境。适用于本页斜点、垂点范例；不能把所有点统一成一个方向。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第3页、页脚002。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-003",
+      "bookId": "strokes",
+      "pdfPage": 4,
+      "printedPage": "003",
+      "title": "长横与短横的长度、倾斜不同",
+      "kind": "paraphrase",
+      "topics": [
+        "笔法",
+        "横"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "十",
+        "百",
+        "工",
+        "天"
+      ],
+      "text": "长横从起笔到收笔有轻重变化，整体略向右上但不宜过斜；短横较短，也向右上取势，本页说明其多用于字的上部。",
+      "practice": "临写“十”和“天”，先比较两横的长度，再观察右端高度，避免把上斜写成明显陡坡。",
+      "conditions": "本书为硬笔楷书语境。长度和斜度仍须结合本字范例，不据此设定统一数值比例。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第4页、页脚003。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-004",
+      "bookId": "strokes",
+      "pdfPage": 4,
+      "printedPage": "003",
+      "title": "垂露竖与悬针竖的末端不同",
+      "kind": "paraphrase",
+      "topics": [
+        "笔法",
+        "竖"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "个",
+        "本",
+        "中",
+        "平"
+      ],
+      "text": "垂露竖可依所在位置略有倾斜，末端收住；悬针竖强调直立，末端有控制地收尖。本页提醒二者不可随意互换。",
+      "practice": "分别临写“个”“中”和“平”，只观察竖的末端形态与是否倾斜。",
+      "conditions": "本书为硬笔楷书语境。本页允许垂露竖代替部分悬针竖，但未支持反向任意替换。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第4页、页脚003。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-005",
+      "bookId": "strokes",
+      "pdfPage": 5,
+      "printedPage": "004",
+      "title": "斜撇与竖撇的转向不同",
+      "kind": "paraphrase",
+      "topics": [
+        "笔法",
+        "撇"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "人",
+        "为",
+        "史",
+        "井"
+      ],
+      "text": "斜撇向左下运行，由重到轻后收尖；竖撇先有向下的竖段，到适当位置再转向左下撇出。",
+      "practice": "先练两种独立撇，再临写“人”与“井”，观察竖撇是否过早转弯。",
+      "conditions": "本书为硬笔楷书语境。转向位置按具体范字校对，不将示例分段位置视为所有字的固定比例。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第5页、页脚004。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-006",
+      "bookId": "strokes",
+      "pdfPage": 5,
+      "printedPage": "004",
+      "title": "斜捺和平捺的走势",
+      "kind": "paraphrase",
+      "topics": [
+        "笔法",
+        "捺"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "人",
+        "文",
+        "之",
+        "道"
+      ],
+      "text": "斜捺起笔较轻，行进时逐渐加重，末端向右出锋；平捺与其用笔过程相近，整体走势更平。",
+      "practice": "临写“文”和“之”，比较捺的倾斜程度与末段展开方向，不把平捺写成下坠的斜捺。",
+      "conditions": "本书为硬笔楷书语境。本页谈的是书写过程，静态照片不能验证实际压力或速度。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第5页、页脚004。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-007",
+      "bookId": "strokes",
+      "pdfPage": 6,
+      "printedPage": "005",
+      "title": "提画由左下向右上取势",
+      "kind": "paraphrase",
+      "topics": [
+        "笔法",
+        "提"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "场",
+        "班",
+        "习",
+        "式"
+      ],
+      "text": "短提由重到轻，行笔较快，注意左下至右上的走向；长提写法相近而形体略长，出锋应利落。",
+      "practice": "临写“场”和“式”，标记提的起止位置，检查是否把提写成了短横。",
+      "conditions": "本书为硬笔楷书语境。适用于本页提画范例；实际速度不由图片判断。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第6页、页脚005。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-008",
+      "bookId": "strokes",
+      "pdfPage": 6,
+      "printedPage": "005",
+      "title": "折画一笔完成并辨清转折",
+      "kind": "paraphrase",
+      "topics": [
+        "笔法",
+        "折"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "回",
+        "贝",
+        "山",
+        "世"
+      ],
+      "text": "横折把横与竖连续写成一笔，转折处稍作停顿；竖折由竖转为横，转角要清楚，不能写成两笔拼接。",
+      "practice": "临写“回”与“山”，观察折角是否清楚，同时在书写时确认中途没有断笔。",
+      "conditions": "本书为硬笔楷书语境。本条只覆盖横折与竖折，不据此替代其他复合折画的具体写法。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第6页、页脚005。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-009",
+      "bookId": "strokes",
+      "pdfPage": 7,
+      "printedPage": "006",
+      "title": "横钩短促，竖钩先稳住竖段",
+      "kind": "paraphrase",
+      "topics": [
+        "笔法",
+        "钩"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "皮",
+        "予",
+        "牙",
+        "手"
+      ],
+      "text": "横钩的横略向右上，末端转向左下出钩，钩不宜长；竖钩应先写好直的竖段，再向左上迅速出钩。",
+      "practice": "临写“予”和“手”，分别检查钩的方向与长度；竖钩先看竖段是否直。",
+      "conditions": "本书为硬笔楷书语境。不同钩形的出钩方向不同，不能把本条扩展成全部钩画的规则。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第7页、页脚006。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-010",
+      "bookId": "strokes",
+      "pdfPage": 7,
+      "printedPage": "006",
+      "title": "斜钩与卧钩分别控制斜势和弧势",
+      "kind": "paraphrase",
+      "topics": [
+        "笔法",
+        "钩"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "戈",
+        "我",
+        "心",
+        "必"
+      ],
+      "text": "斜钩需兼顾倾斜与弯曲，避免过直或过弯，钩向上；卧钩则向右下弧行，最后向左上出钩。",
+      "practice": "比较“戈”与“心”的钩形，先描出大致弧线，再临写，检查两种钩是否混同。",
+      "conditions": "本书为硬笔楷书语境。弧度须参照相应字例，本页没有给出适用于所有字的弧度数值。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第7页、页脚006。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-011",
+      "bookId": "strokes",
+      "pdfPage": 8,
+      "printedPage": "007",
+      "title": "横撇兼顾横短、撇长与转角",
+      "kind": "paraphrase",
+      "topics": [
+        "笔法",
+        "组合笔画"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "又",
+        "反"
+      ],
+      "text": "横撇由横和撇组成，本页强调横较短、撇较长，并结合转角与撇段长度共同把握形态。",
+      "practice": "临写“又”和“反”，比较横、撇的长短关系，检查转角是否使字形僵硬。",
+      "conditions": "本书为硬笔楷书语境。仅为本页横撇范例的写法；转角不设为全字库统一参数。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第8页、页脚007。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-012",
+      "bookId": "strokes",
+      "pdfPage": 8,
+      "printedPage": "007",
+      "title": "横折提要紧凑地衔接提画",
+      "kind": "paraphrase",
+      "topics": [
+        "笔法",
+        "组合笔画",
+        "偏旁"
+      ],
+      "structures": [],
+      "components": [
+        "讠"
+      ],
+      "characters": [
+        "说",
+        "记"
+      ],
+      "text": "横折提由横折与提连接而成，横短而上仰，整体偏长，末段提画短促有力；它与点组合可构成言字旁。",
+      "practice": "临写“说”和“记”，先单练横折提，检查横是否过长、提画是否拖沓。",
+      "conditions": "本书为硬笔楷书语境。适用于本页言字旁相关范例。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第8页、页脚007。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-013",
+      "bookId": "strokes",
+      "pdfPage": 9,
+      "printedPage": "008",
+      "title": "横折钩与横折斜钩的形态区别",
+      "kind": "paraphrase",
+      "topics": [
+        "笔法",
+        "组合笔画"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "月",
+        "周",
+        "刀",
+        "力"
+      ],
+      "text": "横折钩强调竖段直、折角明确和短钩；横折斜钩则将相应折角、竖钩部分作内收处理，形态有所变化。",
+      "practice": "比较“月”与“力”的相关笔画，观察竖段方向和内收幅度，再分别临写。",
+      "conditions": "本书为硬笔楷书语境。本条比较本页两类组合笔画，不将其中一种强行套用于另一种。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第9页、页脚008。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-014",
+      "bookId": "strokes",
+      "pdfPage": 9,
+      "printedPage": "008",
+      "title": "横折弯钩要连贯并稳住底部",
+      "kind": "paraphrase",
+      "topics": [
+        "笔法",
+        "组合笔画"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "乙",
+        "九"
+      ],
+      "text": "横折弯钩的横略上仰，折角明确，弯钩部分连续完成；下段横画应平稳，最后向上出钩。",
+      "practice": "临写“乙”和“九”，检查底部横向段是否失稳，弯转是否断成零散笔段。",
+      "conditions": "本书为硬笔楷书语境。该页同时讲横折抛钩，本条仅摘要横折弯钩，避免混用两者。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第9页、页脚008。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-015",
+      "bookId": "strokes",
+      "pdfPage": 10,
+      "printedPage": "009",
+      "title": "耳刀旁中的横撇弯钩有左右差异",
+      "kind": "paraphrase",
+      "topics": [
+        "笔法",
+        "偏旁",
+        "组合笔画"
+      ],
+      "structures": [
+        "左右结构"
+      ],
+      "components": [
+        "阝"
+      ],
+      "characters": [
+        "阿",
+        "那"
+      ],
+      "text": "横撇弯钩需要连贯成笔，横撇段略短、弯钩有力。本页说明用于左耳刀时较窄，用于右耳刀时较宽。",
+      "practice": "比较“阿”和“那”的耳刀旁，在同样大小的格内观察左右耳刀的宽窄差异。",
+      "conditions": "本书为硬笔楷书语境。须先辨别耳刀旁在左还是在右；这里的左右形体比较不代表二者字源相同。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第10页、页脚009。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-016",
+      "bookId": "strokes",
+      "pdfPage": 10,
+      "printedPage": "009",
+      "title": "竖弯与竖弯钩重在自然转弯",
+      "kind": "paraphrase",
+      "topics": [
+        "笔法",
+        "组合笔画"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "四",
+        "西",
+        "儿",
+        "也"
+      ],
+      "text": "竖弯从竖自然转向右方，不宜硬折，末端不带钩；竖弯钩还须控制弧度和长度，最终向上出钩。",
+      "practice": "比较“四”与“儿”的相关笔画，先区分末端有无钩，再看转弯是否过硬。",
+      "conditions": "本书为硬笔楷书语境。竖段长度随字不同，不由本条给出固定长度。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第10页、页脚009。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-017",
+      "bookId": "strokes",
+      "pdfPage": 11,
+      "printedPage": "010",
+      "title": "竖提的竖段和提段连续衔接",
+      "kind": "paraphrase",
+      "topics": [
+        "笔法",
+        "组合笔画"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "氏",
+        "衣"
+      ],
+      "text": "竖提须保持竖段直，提段迅速有力并指向右上，两段连续写成，不应拆开。",
+      "practice": "临写“氏”和“衣”，检查竖段方向；书写时留意转提处是否断笔。",
+      "conditions": "本书为硬笔楷书语境。静态成品只支持形态比较，是否断笔需结合实际书写或轨迹。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第11页、页脚010。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-018",
+      "bookId": "strokes",
+      "pdfPage": 11,
+      "printedPage": "010",
+      "title": "撇折点须随结构调整角度",
+      "kind": "paraphrase",
+      "topics": [
+        "笔法",
+        "组合笔画",
+        "重心"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "女",
+        "母"
+      ],
+      "text": "本页将撇折点说明为斜撇与长点组合，中段较细、两端较重，并强调折角要随具体结构调整，注意重心。",
+      "practice": "临写“女”和“母”，比较转折处角度与整体稳定性，避免只追求单笔形态。",
+      "conditions": "本书为硬笔楷书语境。按本页用语保留“撇折点”名称，不用它替代其他数据库的标准笔画分类。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第11页、页脚010。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-019",
+      "bookId": "strokes",
+      "pdfPage": 12,
+      "printedPage": "011",
+      "title": "成字强化练习与空格交替编排",
+      "kind": "observation",
+      "topics": [
+        "学习方法",
+        "临写"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "永",
+        "平",
+        "书"
+      ],
+      "text": "第10课强化练习把范字行与空白田字格行交替安排，将前面笔画练习接到完整汉字练习。",
+      "practice": "从本页选“永”“平”“书”各临写一次，写后各找一处与范字不同的位置。",
+      "conditions": "本书为硬笔楷书语境。这是对页面编排的观察；所选练习次数和检查步骤由系统设计。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第12页、页脚011。text 为对页面编排或范例的观察，不是作者明示的教学规律。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-020",
+      "bookId": "strokes",
+      "pdfPage": 13,
+      "printedPage": "012",
+      "title": "强化页提供含不同部件的成字范例",
+      "kind": "observation",
+      "topics": [
+        "学习方法",
+        "临写"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "语",
+        "防",
+        "奶"
+      ],
+      "text": "本页继续采用范字与空格相接的强化练习，包含“语”“防”“奶”等带不同偏旁的范例，没有为每字附单独的文字解析。",
+      "practice": "任选一个范字，先比较偏旁与其余部分的位置，再临写；本页没有写明的用笔细节应另找证据。",
+      "conditions": "本书为硬笔楷书语境。只能引用为范例存在与版面观察，不能据此声称作者明确讲过某条迁移规则。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第13页、页脚012。text 为对页面编排或范例的观察，不是作者明示的教学规律。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-021",
+      "bookId": "strokes",
+      "pdfPage": 15,
+      "printedPage": "014",
+      "title": "单人旁的竖从撇中段略下处起笔",
+      "kind": "paraphrase",
+      "topics": [
+        "偏旁",
+        "笔画位置"
+      ],
+      "structures": [
+        "左右结构"
+      ],
+      "components": [
+        "亻"
+      ],
+      "characters": [
+        "化",
+        "仇",
+        "但",
+        "使"
+      ],
+      "text": "单人旁由斜撇和垂露竖构成，竖应写直，竖的起笔与撇的中部略下位置相接；短撇不宜过于短促。",
+      "practice": "临写“化”“但”，比较竖起点在撇上的位置，检查偏旁是否歪斜。",
+      "conditions": "本书为硬笔楷书语境。本条仅适用于单人旁，不能移作独体“人”的完整写法。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第15页、页脚014。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-022",
+      "bookId": "strokes",
+      "pdfPage": 15,
+      "printedPage": "014",
+      "title": "双人旁上撇较短并为右部让位",
+      "kind": "paraphrase",
+      "topics": [
+        "偏旁",
+        "避让"
+      ],
+      "structures": [
+        "左右结构"
+      ],
+      "components": [
+        "彳"
+      ],
+      "characters": [
+        "行",
+        "征",
+        "律"
+      ],
+      "text": "双人旁的第二撇略长，从第一撇中部附近向下衔接；竖用垂露，可略向左斜，给右侧部分留出空间。",
+      "practice": "临写“行”“律”，先看两撇长短，再检查竖与右部是否挤靠。",
+      "conditions": "本书为硬笔楷书语境。适用于本页双人旁写法，不套用于形似的其他偏旁。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第15页、页脚014。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-023",
+      "bookId": "strokes",
+      "pdfPage": 18,
+      "printedPage": "017",
+      "title": "言字旁窄长并注意点与折的位置",
+      "kind": "paraphrase",
+      "topics": [
+        "偏旁",
+        "笔画位置",
+        "比例"
+      ],
+      "structures": [
+        "左右结构"
+      ],
+      "components": [
+        "讠"
+      ],
+      "characters": [
+        "识",
+        "许",
+        "诗",
+        "调"
+      ],
+      "text": "言字旁的点在折笔上方偏右，短横向右上取势，折角与点相对，整体宜窄长，并与右部大小协调。",
+      "practice": "临写“识”和“诗”，比较点、折角的相对位置，再观察偏旁是否挤占右部空间。",
+      "conditions": "本书为硬笔楷书语境。本页未给定左右宽度的数字比例。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第18页、页脚017。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-024",
+      "bookId": "strokes",
+      "pdfPage": 18,
+      "printedPage": "017",
+      "title": "绞丝旁两撇折有同向与变化",
+      "kind": "paraphrase",
+      "topics": [
+        "偏旁",
+        "笔法"
+      ],
+      "structures": [
+        "左右结构"
+      ],
+      "components": [
+        "纟"
+      ],
+      "characters": [
+        "纸",
+        "结",
+        "统",
+        "练"
+      ],
+      "text": "绞丝旁的两撇折方向一致，但角度和粗细须有变化；第一撇折角度稍大，提不宜过长，整体避免臃肿。",
+      "practice": "临写“纸”和“结”，对照两撇折的角度，再检查末提是否过长。",
+      "conditions": "本书为硬笔楷书语境。适用于本页简体绞丝旁，不自动推广为繁体糸旁的笔画说明。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第18页、页脚017。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-025",
+      "bookId": "strokes",
+      "pdfPage": 22,
+      "printedPage": "021",
+      "title": "提手旁左展右收并给右部留位",
+      "kind": "paraphrase",
+      "topics": [
+        "偏旁",
+        "避让",
+        "比例"
+      ],
+      "structures": [
+        "左右结构"
+      ],
+      "components": [
+        "扌"
+      ],
+      "characters": [
+        "扔",
+        "批",
+        "挂",
+        "推"
+      ],
+      "text": "提手旁竖钩挺直，整体左侧展开、右侧收束；短横偏左，右侧露出较少，提画有力但不宜过度伸出。",
+      "practice": "临写“扔”和“挂”，只比较横与提伸向右侧的长度，检查右部是否被挤压。",
+      "conditions": "本书为硬笔楷书语境。这是偏旁内部伸展的相对关系，不是固定的左窄右宽百分比。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第22页、页脚021。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-026",
+      "bookId": "strokes",
+      "pdfPage": 22,
+      "printedPage": "021",
+      "title": "竖心旁两点与中竖有方向变化",
+      "kind": "paraphrase",
+      "topics": [
+        "偏旁",
+        "疏密",
+        "笔画位置"
+      ],
+      "structures": [
+        "左右结构"
+      ],
+      "components": [
+        "忄"
+      ],
+      "characters": [
+        "怀",
+        "恰",
+        "惯",
+        "情"
+      ],
+      "text": "竖心旁以中竖为关键，整体窄长，竖用垂露；左点不宜贴竖太近，右点可稍平，三笔方向应有变化。",
+      "practice": "临写“怀”和“情”，比较左点与竖的间隔，再看两点方向是否机械相同。",
+      "conditions": "本书为硬笔楷书语境。点的位置与间距需参照具体范字，不能按同一数值复制。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第22页、页脚021。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-027",
+      "bookId": "strokes",
+      "pdfPage": 28,
+      "printedPage": "027",
+      "title": "左耳刀与右耳刀分别处理大小和竖形",
+      "kind": "paraphrase",
+      "topics": [
+        "偏旁",
+        "比例",
+        "笔法"
+      ],
+      "structures": [
+        "左右结构"
+      ],
+      "components": [
+        "阝"
+      ],
+      "characters": [
+        "际",
+        "院",
+        "部",
+        "郎"
+      ],
+      "text": "左耳刀较小巧、窄长，用垂露竖并略向左斜；右耳刀较大、形长，上紧下松，竖用悬针并略向右下取势。",
+      "practice": "比较“际”“院”与“部”“郎”，观察左右耳刀的体量和竖末端，再分别临写。",
+      "conditions": "本书为硬笔楷书语境。必须区分左右位置；本条归纳形态处理，不涉及两种偏旁字源。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第28页、页脚027。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-028",
+      "bookId": "strokes",
+      "pdfPage": 28,
+      "printedPage": "027",
+      "title": "单耳刀短小，竖画保持直",
+      "kind": "paraphrase",
+      "topics": [
+        "偏旁",
+        "笔法"
+      ],
+      "structures": [
+        "左右结构"
+      ],
+      "components": [
+        "卩"
+      ],
+      "characters": [
+        "印",
+        "却",
+        "即",
+        "卸"
+      ],
+      "text": "单耳部分不宜拉得过长，横折斜钩的横略向右上，竖的下部向内斜；竖画要直，可用悬针，也可用垂露。",
+      "practice": "临写“印”和“即”，先看单耳部分是否过长，再观察竖画方向。",
+      "conditions": "本书为硬笔楷书语境。本页“单耳刀”所指为卩，与左右耳刀阝分开检索。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第28页、页脚027。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-029",
+      "bookId": "strokes",
+      "pdfPage": 34,
+      "printedPage": "033",
+      "title": "四字头宽扁，短竖并非机械平行",
+      "kind": "paraphrase",
+      "topics": [
+        "偏旁",
+        "比例",
+        "笔画位置"
+      ],
+      "structures": [
+        "上下结构"
+      ],
+      "components": [
+        "罒"
+      ],
+      "characters": [
+        "罗",
+        "罢",
+        "罪",
+        "置"
+      ],
+      "text": "四字头整体宽扁，上宽下窄；四个短竖长度大体相当，但不能写成完全平行的栅栏。",
+      "practice": "临写“罗”和“罪”，比较外框宽高与各短竖方向，不只数格子追求绝对平行。",
+      "conditions": "本书为硬笔楷书语境。适用于本页作字头的罒，不用于独体“四”的全部结构。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第34页、页脚033。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "strokes-030",
+      "bookId": "strokes",
+      "pdfPage": 34,
+      "printedPage": "033",
+      "title": "雨字头扁而清楚，四点各有位置",
+      "kind": "paraphrase",
+      "topics": [
+        "偏旁",
+        "比例",
+        "笔画位置"
+      ],
+      "structures": [
+        "上下结构"
+      ],
+      "components": [
+        "雨"
+      ],
+      "characters": [
+        "雪",
+        "零",
+        "震",
+        "霸"
+      ],
+      "text": "雨字头宜扁，短竖居中，左侧两点略低、右侧两点略高，四点形态应有区别，各笔交代清楚。",
+      "practice": "临写“雪”和“震”，先检查中竖，再比较左右两组点的位置，避免挤成墨团。",
+      "conditions": "本书为硬笔楷书语境。本条针对雨字头位置，不将同一高低关系无条件用于独体“雨”。",
+      "reviewed": true,
+      "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第34页、页脚033。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+    },
+    {
+      "id": "structure-001",
+      "bookId": "structure",
+      "pdfPage": 3,
+      "printedPage": 2,
+      "title": "起笔前先定位",
+      "kind": "paraphrase",
+      "topics": [
+        "定位",
+        "大小",
+        "田字格"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "广",
+        "父",
+        "心",
+        "吃",
+        "水",
+        "山",
+        "字",
+        "雀",
+        "田",
+        "国"
+      ],
+      "text": "落笔前先安排字的大小和位置，再按字形确定起笔处。格中练习要使字的中心居中，不要写满格子，也不要忽左忽右或忽上忽下。",
+      "practice": "本站练习建议：各写三个“田”和“国”，对照格子中心检查整字是否偏移、是否挤满格。",
+      "conditions": "用于方格中的整字定位；具体起笔位置仍随独体字、合体字和字形而变，不给所有字固定同一起笔点。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第3页、印刷002页“起笔定位”及页下定位图完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-002",
+      "bookId": "structure",
+      "pdfPage": 4,
+      "printedPage": 3,
+      "title": "横平竖直重在视觉端正",
+      "kind": "paraphrase",
+      "topics": [
+        "横",
+        "竖",
+        "端正"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "一",
+        "十",
+        "丰",
+        "中",
+        "牛",
+        "斗",
+        "米",
+        "申"
+      ],
+      "text": "楷书要写得端正协调。教材说明，横画需有一定上斜角度以求视觉上的平，作主笔的竖一般应垂直向下，避免歪斜。",
+      "practice": "本站练习建议：对照竖中线写“十、丰、中”，分别检查横势与主竖方向，不把横画机械画成水平线。",
+      "conditions": "这里的竖直主要指作主笔的竖；教材本段没有给出固定倾斜角度。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第4页、印刷003页上方“横平竖直”说明与例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-003",
+      "bookId": "structure",
+      "pdfPage": 4,
+      "printedPage": 3,
+      "title": "撇捺围绕中线舒展",
+      "kind": "paraphrase",
+      "topics": [
+        "撇捺",
+        "对称",
+        "中线"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "仓",
+        "木",
+        "天",
+        "交",
+        "火",
+        "冬",
+        "禾",
+        "永"
+      ],
+      "text": "字中撇捺两分时，应以中线为基准安排左右，舒展大方，撇脚与捺脚基本平齐；有中竖或竖钩时，还须照顾它们与中竖下端的高低关系。",
+      "practice": "本站练习建议：并排写“木、天、禾”，比较撇捺的伸展及落脚位置，再观察中竖是否稳住全字。",
+      "conditions": "用于教材所示撇捺左右分展的字形；对称是布势要求，不等于两笔形状完全镜像。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第4页、印刷003页下方“撇捺对称”说明与例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-004",
+      "bookId": "structure",
+      "pdfPage": 5,
+      "printedPage": 4,
+      "title": "用主笔和均衡安排重心",
+      "kind": "paraphrase",
+      "topics": [
+        "重心",
+        "主笔",
+        "均衡"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "戈",
+        "亏",
+        "多",
+        "少",
+        "万",
+        "夕",
+        "武",
+        "伊"
+      ],
+      "text": "有中竖或长横作主笔时，教材以主笔提示重心；主笔不明显或字身有倾斜时，则从中线或交叉点寻找支撑，并通过笔画对称或分量均衡求平稳。",
+      "practice": "本站练习建议：写“戈、万、多”，先圈出自己认为起支撑作用的位置，再与同页范字比较全字是否有倾倒感。",
+      "conditions": "这是教材的结构观察方法，不是由图像黑色像素计算出的物理重心坐标。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第5页、印刷004页“重心平稳”说明与例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-005",
+      "bookId": "structure",
+      "pdfPage": 6,
+      "printedPage": 5,
+      "title": "主笔突出，次笔让位",
+      "kind": "paraphrase",
+      "topics": [
+        "主笔",
+        "主次",
+        "舒展"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "旦",
+        "韦",
+        "夫",
+        "手",
+        "戈",
+        "史",
+        "母",
+        "包",
+        "美",
+        "七",
+        "六",
+        "半",
+        "斤",
+        "羊"
+      ],
+      "text": "一个字应有主次，主笔宜突出舒展，次笔应让位、衬托。教材分别示范长横与悬针竖作主笔，借主要笔画建立全字的节奏。",
+      "practice": "本站练习建议：分别写“美”和“半”，先找主笔，再检查其余笔画是否争长，造成主次不分。",
+      "conditions": "先辨认该字具体主笔，再决定哪些次笔收敛；不能把每一横、每一竖都写长。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第6页、印刷005页“主笔突出”及“长横为主笔”“悬针竖为主笔”图示完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-006",
+      "bookId": "structure",
+      "pdfPage": 8,
+      "printedPage": 7,
+      "title": "看笔画，也看空白",
+      "kind": "paraphrase",
+      "topics": [
+        "布白",
+        "间距",
+        "均匀"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "田",
+        "用",
+        "闪",
+        "司",
+        "弗",
+        "亘",
+        "再",
+        "羽"
+      ],
+      "text": "布白关注笔画之外的空白。多笔画组合成字时，要留意笔画分割出的空间和相邻笔画间距，使布置均匀。",
+      "practice": "本站练习建议：写“田、用、再”，逐一比较内部相邻的空白，找出明显挤窄或放大的位置。",
+      "conditions": "用于检查同类笔画之间的间距和空间安排；教材没有给出可用于所有字的统一面积阈值。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第8页、印刷007页上方“布白均匀”说明与例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-007",
+      "bookId": "structure",
+      "pdfPage": 8,
+      "printedPage": 7,
+      "title": "中心收紧，外围舒展",
+      "kind": "paraphrase",
+      "topics": [
+        "中宫",
+        "疏密",
+        "舒展"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "串",
+        "弃",
+        "闷",
+        "层",
+        "妖",
+        "邵",
+        "拗",
+        "茄"
+      ],
+      "text": "教材用中宫收紧说明怎样避免结构松散：字的中心宜紧，四周笔画可以适当舒展，使全字形成向心的组织。",
+      "practice": "本站练习建议：写“串、弃、妖”，比较字心是否松散，再检查外围笔画有没有被一并挤住。",
+      "conditions": "用于观察中心与外围的疏密关系；不能把中宫收紧理解为全部笔画都缩在一起。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第8页、印刷007页下方“中宫收紧”说明与例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-008",
+      "bookId": "structure",
+      "pdfPage": 9,
+      "printedPage": 8,
+      "title": "顺应字形，不强求方正",
+      "kind": "paraphrase",
+      "topics": [
+        "字形",
+        "宽窄",
+        "长扁"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "正",
+        "五",
+        "太",
+        "专",
+        "月",
+        "民",
+        "丁",
+        "火",
+        "舟",
+        "丹",
+        "四",
+        "工",
+        "回"
+      ],
+      "text": "汉字虽称方块字，书写时仍要顺应各自形状。瘦长的字不宜把横画写得过长而变宽扁；教材也把窄长字与扁宽字分组示范。",
+      "practice": "本站练习建议：交替写“月、舟”和“四、工”，观察两组的外轮廓差别，不把它们都塞成同样的正方形。",
+      "conditions": "须先判断目标字本身的形态；不能只因同在田字格中，就要求所有字等宽等高。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第9页、印刷008页“字随其形”及窄长、扁宽分组图示完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-009",
+      "bookId": "structure",
+      "pdfPage": 11,
+      "printedPage": 10,
+      "title": "上部能覆盖，下部能承托",
+      "kind": "paraphrase",
+      "topics": [
+        "覆盖",
+        "承托",
+        "宽窄"
+      ],
+      "structures": [
+        "上下结构"
+      ],
+      "components": [],
+      "characters": [
+        "芦",
+        "享",
+        "宇",
+        "育",
+        "芝",
+        "皂",
+        "妥",
+        "弃"
+      ],
+      "text": "上部字形宽展时，应使笔画舒展而有覆盖下部之势；下部字形宽展时，应形成承托上部之势。教材用这两种关系解释天覆地载。",
+      "practice": "本站练习建议：对比写“宇”和“妥”，分别检查上部覆盖与下部承托是否清楚。",
+      "conditions": "根据本字哪一部分宽展选择覆盖或承托关系；并非要求所有上下结构一律上宽或一律下宽。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第11页、印刷010页上方“天覆地载”说明与例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-010",
+      "bookId": "structure",
+      "pdfPage": 12,
+      "printedPage": 11,
+      "title": "相向要避让，相背要呼应",
+      "kind": "paraphrase",
+      "topics": [
+        "相向",
+        "相背",
+        "穿插",
+        "避让",
+        "呼应"
+      ],
+      "structures": [
+        "左右结构"
+      ],
+      "components": [],
+      "characters": [
+        "炒",
+        "祝",
+        "姑",
+        "娆",
+        "弥",
+        "孤",
+        "狠",
+        "旅"
+      ],
+      "text": "左右相向的字，要照顾笔画间的穿插和挪让，不要靠得过紧；左右相背的字，仍要互相呼应，做到形背而不离散。",
+      "practice": "本站练习建议：对照例字写“姑、孤”，检查两部分是否挤碰，或被分成互不关联的两块。",
+      "conditions": "先辨认左右两部分的朝向与笔画关系，再决定穿插、避让或呼应；不以统一固定间距代替判断。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第12页、印刷011页上方“相向相背”说明与例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-011",
+      "bookId": "structure",
+      "pdfPage": 12,
+      "printedPage": 11,
+      "title": "疏字排开，密字不挤",
+      "kind": "paraphrase",
+      "topics": [
+        "疏密",
+        "间距",
+        "轻重"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "川",
+        "仁",
+        "凸",
+        "引",
+        "娜",
+        "载",
+        "慧"
+      ],
+      "text": "笔画少的字，可把笔画间的距离排开、增大空隙；笔画多的字，用笔宜轻，笔画安排要匀称、紧凑，做到密而不挤。",
+      "practice": "本站练习建议：对比写“川”和“慧”，分别检查疏处是否局促、密处是否粘连，不要求两字内部留白相同。",
+      "conditions": "依据整字笔画疏密作安排；这里的用笔建议不能转化为仅凭照片判断毛笔力度的结论。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第12页、印刷011页下方“字疏字密”说明与清楚可辨的例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-012",
+      "bookId": "structure",
+      "pdfPage": 13,
+      "printedPage": 12,
+      "title": "繁简不同，字的大小可有变化",
+      "kind": "paraphrase",
+      "topics": [
+        "大小",
+        "繁简",
+        "穿插",
+        "避让"
+      ],
+      "structures": [],
+      "components": [],
+      "characters": [
+        "鹏",
+        "熙",
+        "口",
+        "日",
+        "甘",
+        "么"
+      ],
+      "text": "笔画多的字可稍大，须注意穿插和挪让，不能出格；笔画少的字，用笔可稍重，不要勉强把字放大。",
+      "practice": "本站练习建议：在同样大小的格子中写“鹏、口”，观察繁字是否挤出格，简字是否被强拉得空散。",
+      "conditions": "这是繁简字在相同练习格中的相对安排，不提供固定像素大小或通用占格百分比。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第13页、印刷012页上方“字大字小”说明与清楚可辨的例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-013",
+      "bookId": "structure",
+      "pdfPage": 16,
+      "printedPage": 15,
+      "title": "左右相等时，左收右展",
+      "kind": "paraphrase",
+      "topics": [
+        "左右相等",
+        "比例",
+        "呼应"
+      ],
+      "structures": [
+        "左右结构"
+      ],
+      "components": [],
+      "characters": [
+        "祁",
+        "改",
+        "好",
+        "耶",
+        "群",
+        "畅",
+        "帜",
+        "姐"
+      ],
+      "text": "对左右相等这一类，教材将两部分各按一半宽度安排，左部笔画略收缩，右部略舒展，各自成形并互相呼应。",
+      "practice": "本站练习建议：写“好、姐”，比较两部分的占位，再观察左收右展是否破坏了整体联系。",
+      "conditions": "仅用于左右相等这一类别；不能推广到左窄右宽、左宽右窄等所有左右结构。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第16页、印刷015页“左右相等”说明与例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-014",
+      "bookId": "structure",
+      "pdfPage": 17,
+      "printedPage": 16,
+      "title": "左窄右宽的占位",
+      "kind": "paraphrase",
+      "topics": [
+        "左窄右宽",
+        "比例",
+        "宽窄"
+      ],
+      "structures": [
+        "左右结构"
+      ],
+      "components": [],
+      "characters": [
+        "侠",
+        "次",
+        "师",
+        "抗",
+        "抢",
+        "论",
+        "阮",
+        "洲"
+      ],
+      "text": "左窄右宽的字，左部占位较窄，教材给出的参考约为全字宽度三分之一；右部较宽，约占三分之二。",
+      "practice": "本站练习建议：写“抗、论、洲”，先比较左右宽窄，再检查左部是否挤压了右部的展开空间。",
+      "conditions": "先确认目标字属于左窄右宽类；三分之一与三分之二是教材的约数，不是每个字必须精确满足的测量值。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第17页、印刷016页上方“左窄右宽”说明与例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-015",
+      "bookId": "structure",
+      "pdfPage": 17,
+      "printedPage": 16,
+      "title": "左宽右窄的占位",
+      "kind": "paraphrase",
+      "topics": [
+        "左宽右窄",
+        "比例",
+        "宽窄"
+      ],
+      "structures": [
+        "左右结构"
+      ],
+      "components": [],
+      "characters": [
+        "刑",
+        "删",
+        "邺",
+        "邮",
+        "彩",
+        "影",
+        "断",
+        "敲"
+      ],
+      "text": "左宽右窄的字，左部占位较宽，教材给出的参考约为全字宽度三分之二；右部较窄，约占三分之一。",
+      "practice": "本站练习建议：写“刑、彩、影”，检查右部是否过宽，以致两部分失去原有的主次。",
+      "conditions": "先确认目标字属于左宽右窄类；比例是该类的近似参考，不能仅凭左右结构标签直接套用。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第17页、印刷016页下方“左宽右窄”说明与例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-016",
+      "bookId": "structure",
+      "pdfPage": 18,
+      "printedPage": 17,
+      "title": "左长右短，右部靠下",
+      "kind": "paraphrase",
+      "topics": [
+        "左长右短",
+        "高低",
+        "占位"
+      ],
+      "structures": [
+        "左右结构"
+      ],
+      "components": [],
+      "characters": [
+        "如",
+        "知",
+        "和",
+        "虹",
+        "扣",
+        "积",
+        "粕"
+      ],
+      "text": "左右宽窄大致相同、左部较长而右部较短时，左部宜伸展，右部短矮并靠下占位。",
+      "practice": "本站练习建议：写“如、和、扣”，比较右部是否被抬得过高，或被拉长成与左部等高。",
+      "conditions": "用于教材所述宽窄大致相同而左长右短的类别；不推定所有带口的字都应右部靠下。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第18页、印刷017页上方“左长右短”说明与清楚可辨的例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-017",
+      "bookId": "structure",
+      "pdfPage": 18,
+      "printedPage": 17,
+      "title": "左短右长，左部靠上",
+      "kind": "paraphrase",
+      "topics": [
+        "左短右长",
+        "高低",
+        "占位"
+      ],
+      "structures": [
+        "左右结构"
+      ],
+      "components": [],
+      "characters": [
+        "吧",
+        "晖",
+        "皖",
+        "凌",
+        "请",
+        "啃",
+        "魂"
+      ],
+      "text": "左右两部分长短不同、左短右长时，右部宜伸展，左部短矮并靠上占位。",
+      "practice": "本站练习建议：写“吧、请、啃”，检查左部是否沉得过低，并与右部的伸展关系比较。",
+      "conditions": "用于左短右长这一类别；具体高低仍需对照本字，不把所有左偏旁一律上提。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第18页、印刷017页下方“左短右长”说明与清楚可辨的例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-018",
+      "bookId": "structure",
+      "pdfPage": 21,
+      "printedPage": 20,
+      "title": "上下相等的高度安排",
+      "kind": "paraphrase",
+      "topics": [
+        "上下相等",
+        "比例",
+        "高度"
+      ],
+      "structures": [
+        "上下结构"
+      ],
+      "components": [],
+      "characters": [
+        "变",
+        "音",
+        "姜",
+        "费",
+        "葵",
+        "零",
+        "念",
+        "琴"
+      ],
+      "text": "两个部分上下排列、字形高矮大体相等时，教材按上下各占一半高度来安排。",
+      "practice": "本站练习建议：写“音、念、琴”，比较上下两部分的高度，检查是否一部过度挤压另一部。",
+      "conditions": "须先确认属于上下相等类；不能将所有上下结构强行等分。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第21页、印刷020页“上下相等”说明与例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-019",
+      "bookId": "structure",
+      "pdfPage": 22,
+      "printedPage": 21,
+      "title": "上长下短的高度参考",
+      "kind": "paraphrase",
+      "topics": [
+        "上长下短",
+        "比例",
+        "高度"
+      ],
+      "structures": [
+        "上下结构"
+      ],
+      "components": [],
+      "characters": [
+        "型",
+        "热",
+        "盏",
+        "烈",
+        "煮",
+        "焦",
+        "忽",
+        "盈"
+      ],
+      "text": "上长下短一类，教材将上部占位安排为约三分之二，下部约三分之一；本段结合上部笔画多、下部笔画少等条件说明。",
+      "practice": "本站练习建议：写“型、热、焦”，比较上下占位，避免把下部强拉得与上部等高。",
+      "conditions": "原说明针对上部笔画多且有竖、撇，下部笔画少且无竖、撇的情形；比例是近似参考，不是所有上下字的规则。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第22页、印刷021页上方“上长下短”说明与例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-020",
+      "bookId": "structure",
+      "pdfPage": 22,
+      "printedPage": 21,
+      "title": "上短下长的高度参考",
+      "kind": "paraphrase",
+      "topics": [
+        "上短下长",
+        "比例",
+        "高度"
+      ],
+      "structures": [
+        "上下结构"
+      ],
+      "components": [],
+      "characters": [
+        "草",
+        "笃",
+        "竿",
+        "实",
+        "菜",
+        "罢",
+        "笔",
+        "董"
+      ],
+      "text": "上短下长一类，教材将上部占位安排为约三分之一，下部约三分之二；本段结合上部笔画少、下部笔画多等条件说明。",
+      "practice": "本站练习建议：写“草、菜、笔”，先安排下部的书写空间，再检查上部是否过高。",
+      "conditions": "原说明针对上部笔画少且无竖、撇，下部笔画多且有竖、撇的情形；须核对本字，不能只按字头名称套比例。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第22页、印刷021页下方“上短下长”说明与例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-021",
+      "bookId": "structure",
+      "pdfPage": 23,
+      "printedPage": 22,
+      "title": "上宽下窄，下面让上面",
+      "kind": "paraphrase",
+      "topics": [
+        "上宽下窄",
+        "主笔",
+        "避让"
+      ],
+      "structures": [
+        "上下结构"
+      ],
+      "components": [],
+      "characters": [
+        "仓",
+        "务",
+        "杏",
+        "丽",
+        "含",
+        "宏",
+        "官",
+        "奏"
+      ],
+      "text": "上下结构中，上部有横、横钩或撇捺作主笔时，上部宜伸展，下部笔画紧收以让上，形成上宽下窄之势。",
+      "practice": "本站练习建议：写“仓、杏、宏”，先检查上部主笔，再比较下部是否写得过宽而与上部争势。",
+      "conditions": "须确认上部相应笔画确实承担主笔；不因某字含横或撇捺就直接判为上宽下窄。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第23页、印刷022页上方“上宽下窄”说明与例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-022",
+      "bookId": "structure",
+      "pdfPage": 23,
+      "printedPage": 22,
+      "title": "上窄下宽，下部主笔舒展",
+      "kind": "paraphrase",
+      "topics": [
+        "上窄下宽",
+        "主笔",
+        "舒展"
+      ],
+      "structures": [
+        "上下结构"
+      ],
+      "components": [],
+      "characters": [
+        "邑",
+        "皂",
+        "妥",
+        "采",
+        "某",
+        "南",
+        "星",
+        "虽"
+      ],
+      "text": "上下结构中，下部有长横或撇捺作主笔时，上部笔画宜收敛，下部相应笔画舒展，形成上窄下宽之势。",
+      "practice": "本站练习建议：写“采、星、妥”，比较下部的主要伸展笔画与上部宽度，检查是否上下争宽。",
+      "conditions": "用于下部相应笔画承担主笔的字；须结合本字结构判断，不把任一下部都一律放宽。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第23页、印刷022页下方“上窄下宽”说明与例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-023",
+      "bookId": "structure",
+      "pdfPage": 24,
+      "printedPage": 23,
+      "title": "上开下合，下部居中",
+      "kind": "paraphrase",
+      "topics": [
+        "上开下合",
+        "居中",
+        "宽窄"
+      ],
+      "structures": [
+        "上下结构"
+      ],
+      "components": [],
+      "characters": [
+        "梦",
+        "帮",
+        "垫",
+        "皆",
+        "骂",
+        "贺",
+        "驾",
+        "婴"
+      ],
+      "text": "上部由左右分开的部分组成、下部合为一体时，上部较宽，左右各约占一半宽度；下部较窄，布势要居中。",
+      "practice": "本站练习建议：写“梦、帮、婴”，先找上部左右两部分的中间位置，再检查下部是否偏向一侧。",
+      "conditions": "用于教材所述上部分开、下部合一的上开下合类；不推广到全部上下结构。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第24页、印刷023页上方“上开下合”说明与例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    },
+    {
+      "id": "structure-024",
+      "bookId": "structure",
+      "pdfPage": 24,
+      "printedPage": 23,
+      "title": "上合下开，上部居中",
+      "kind": "paraphrase",
+      "topics": [
+        "上合下开",
+        "居中",
+        "宽窄"
+      ],
+      "structures": [
+        "上下结构"
+      ],
+      "components": [],
+      "characters": [
+        "苑",
+        "昆",
+        "翁",
+        "霜",
+        "霖"
+      ],
+      "text": "上部合为一体、下部由左右分开的部分组成时，上部宜窄并居中，下部宜宽，左右各约占一半宽度。",
+      "practice": "本站练习建议：写“昆、霜、霖”，观察上部是否对准下部的中间，下部左右是否失衡。",
+      "conditions": "用于教材所述上部合一、下部分开的上合下开类；居中和宽窄需结合本字判断。",
+      "reviewed": true,
+      "sourceNote": "对照PDF第24页、印刷023页下方“上合下开”说明与清楚可辨的例字完成视觉核对；text为摘要，非逐字引文；practice为本站设计；reviewed不代表书法专家认证。"
+    }
+  ],
+  "coverageNote": "三份PDF总计132页，仅提取所列已核对页面；不表示已完成全书识别、5000字索引或作者风格训练。",
+  "scope": "硬笔楷书笔画与间架结构；教学摘要、范字观察、系统练习及AI迁移分别标注。"
+}

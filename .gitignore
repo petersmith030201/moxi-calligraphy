@@ -1,0 +1,40 @@
+# Build output and temporary processing
+/dist/
+/work/
+/tmp/
+/node_modules/
+__pycache__/
+*.pyc
+
+# Original textbooks, page renders and personal practice data are never committed
+*.pdf
+*.PDF
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.tif
+*.tiff
+/uploads/
+/practice-data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets belong in the server platform's secret store
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+secrets.json
+.wrangler/
+
+# Local operating-system metadata
+.DS_Store
+Thumbs.db

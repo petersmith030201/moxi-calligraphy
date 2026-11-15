@@ -1,0 +1,17 @@
+name = "moxi-calligraphy-teacher"
+main = "index.js"
+compatibility_date = "2026-11-15"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGINS = "https://petersmith030201.github.io"
+JSON_MODE = "true"
+# AI_ENDPOINT and AI_MODEL must be set to your selected provider/model.
+# Secrets: AI_API_KEY and ACCESS_TOKEN. Never enter them into tracked files.
+
+[[ratelimits]]
+name = "AI_RATE_LIMITER"
+namespace_id = "7101"
+  [ratelimits.simple]
+  limit = 6
+  period = 60

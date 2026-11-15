@@ -1,0 +1,787 @@
+[
+  {
+    "id": "strokes-001",
+    "bookId": "strokes",
+    "pdfPage": 2,
+    "printedPage": "001",
+    "title": "从描红、摹影走向临写",
+    "kind": "paraphrase",
+    "topics": [
+      "学习方法",
+      "临写"
+    ],
+    "structures": [],
+    "components": [],
+    "characters": [],
+    "text": "入门页分别说明描红、摹影与临写，将临写视为训练观察、用笔和结构的重要方法，描红与摹影用于辅助临写。",
+    "practice": "先观察一个范字，再临写一遍；与范字比较后，只选一个笔画或结构问题重写。",
+    "conditions": "本书为硬笔楷书语境。本条总结入门方法，不包含作者对某一具体汉字的评价。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第2页、页脚001。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-002",
+    "bookId": "strokes",
+    "pdfPage": 3,
+    "printedPage": "002",
+    "title": "斜点与垂点须服从所在位置",
+    "kind": "paraphrase",
+    "topics": [
+      "笔法",
+      "点"
+    ],
+    "structures": [],
+    "components": [],
+    "characters": [
+      "义",
+      "大",
+      "小",
+      "亦"
+    ],
+    "text": "斜点向右下运行，逐渐加重后收笔；垂点多与斜点相配，向下略偏左，形体不宜过大，应与全字协调。",
+    "practice": "分别临写“义”与“小”，比较两类点的方向和大小，再检查点与主笔是否协调。",
+    "conditions": "本书为硬笔楷书语境。适用于本页斜点、垂点范例；不能把所有点统一成一个方向。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第3页、页脚002。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-003",
+    "bookId": "strokes",
+    "pdfPage": 4,
+    "printedPage": "003",
+    "title": "长横与短横的长度、倾斜不同",
+    "kind": "paraphrase",
+    "topics": [
+      "笔法",
+      "横"
+    ],
+    "structures": [],
+    "components": [],
+    "characters": [
+      "十",
+      "百",
+      "工",
+      "天"
+    ],
+    "text": "长横从起笔到收笔有轻重变化，整体略向右上但不宜过斜；短横较短，也向右上取势，本页说明其多用于字的上部。",
+    "practice": "临写“十”和“天”，先比较两横的长度，再观察右端高度，避免把上斜写成明显陡坡。",
+    "conditions": "本书为硬笔楷书语境。长度和斜度仍须结合本字范例，不据此设定统一数值比例。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第4页、页脚003。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-004",
+    "bookId": "strokes",
+    "pdfPage": 4,
+    "printedPage": "003",
+    "title": "垂露竖与悬针竖的末端不同",
+    "kind": "paraphrase",
+    "topics": [
+      "笔法",
+      "竖"
+    ],
+    "structures": [],
+    "components": [],
+    "characters": [
+      "个",
+      "本",
+      "中",
+      "平"
+    ],
+    "text": "垂露竖可依所在位置略有倾斜，末端收住；悬针竖强调直立，末端有控制地收尖。本页提醒二者不可随意互换。",
+    "practice": "分别临写“个”“中”和“平”，只观察竖的末端形态与是否倾斜。",
+    "conditions": "本书为硬笔楷书语境。本页允许垂露竖代替部分悬针竖，但未支持反向任意替换。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第4页、页脚003。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-005",
+    "bookId": "strokes",
+    "pdfPage": 5,
+    "printedPage": "004",
+    "title": "斜撇与竖撇的转向不同",
+    "kind": "paraphrase",
+    "topics": [
+      "笔法",
+      "撇"
+    ],
+    "structures": [],
+    "components": [],
+    "characters": [
+      "人",
+      "为",
+      "史",
+      "井"
+    ],
+    "text": "斜撇向左下运行，由重到轻后收尖；竖撇先有向下的竖段，到适当位置再转向左下撇出。",
+    "practice": "先练两种独立撇，再临写“人”与“井”，观察竖撇是否过早转弯。",
+    "conditions": "本书为硬笔楷书语境。转向位置按具体范字校对，不将示例分段位置视为所有字的固定比例。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第5页、页脚004。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-006",
+    "bookId": "strokes",
+    "pdfPage": 5,
+    "printedPage": "004",
+    "title": "斜捺和平捺的走势",
+    "kind": "paraphrase",
+    "topics": [
+      "笔法",
+      "捺"
+    ],
+    "structures": [],
+    "components": [],
+    "characters": [
+      "人",
+      "文",
+      "之",
+      "道"
+    ],
+    "text": "斜捺起笔较轻，行进时逐渐加重，末端向右出锋；平捺与其用笔过程相近，整体走势更平。",
+    "practice": "临写“文”和“之”，比较捺的倾斜程度与末段展开方向，不把平捺写成下坠的斜捺。",
+    "conditions": "本书为硬笔楷书语境。本页谈的是书写过程，静态照片不能验证实际压力或速度。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第5页、页脚004。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-007",
+    "bookId": "strokes",
+    "pdfPage": 6,
+    "printedPage": "005",
+    "title": "提画由左下向右上取势",
+    "kind": "paraphrase",
+    "topics": [
+      "笔法",
+      "提"
+    ],
+    "structures": [],
+    "components": [],
+    "characters": [
+      "场",
+      "班",
+      "习",
+      "式"
+    ],
+    "text": "短提由重到轻，行笔较快，注意左下至右上的走向；长提写法相近而形体略长，出锋应利落。",
+    "practice": "临写“场”和“式”，标记提的起止位置，检查是否把提写成了短横。",
+    "conditions": "本书为硬笔楷书语境。适用于本页提画范例；实际速度不由图片判断。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第6页、页脚005。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-008",
+    "bookId": "strokes",
+    "pdfPage": 6,
+    "printedPage": "005",
+    "title": "折画一笔完成并辨清转折",
+    "kind": "paraphrase",
+    "topics": [
+      "笔法",
+      "折"
+    ],
+    "structures": [],
+    "components": [],
+    "characters": [
+      "回",
+      "贝",
+      "山",
+      "世"
+    ],
+    "text": "横折把横与竖连续写成一笔，转折处稍作停顿；竖折由竖转为横，转角要清楚，不能写成两笔拼接。",
+    "practice": "临写“回”与“山”，观察折角是否清楚，同时在书写时确认中途没有断笔。",
+    "conditions": "本书为硬笔楷书语境。本条只覆盖横折与竖折，不据此替代其他复合折画的具体写法。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第6页、页脚005。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-009",
+    "bookId": "strokes",
+    "pdfPage": 7,
+    "printedPage": "006",
+    "title": "横钩短促，竖钩先稳住竖段",
+    "kind": "paraphrase",
+    "topics": [
+      "笔法",
+      "钩"
+    ],
+    "structures": [],
+    "components": [],
+    "characters": [
+      "皮",
+      "予",
+      "牙",
+      "手"
+    ],
+    "text": "横钩的横略向右上，末端转向左下出钩，钩不宜长；竖钩应先写好直的竖段，再向左上迅速出钩。",
+    "practice": "临写“予”和“手”，分别检查钩的方向与长度；竖钩先看竖段是否直。",
+    "conditions": "本书为硬笔楷书语境。不同钩形的出钩方向不同，不能把本条扩展成全部钩画的规则。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第7页、页脚006。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-010",
+    "bookId": "strokes",
+    "pdfPage": 7,
+    "printedPage": "006",
+    "title": "斜钩与卧钩分别控制斜势和弧势",
+    "kind": "paraphrase",
+    "topics": [
+      "笔法",
+      "钩"
+    ],
+    "structures": [],
+    "components": [],
+    "characters": [
+      "戈",
+      "我",
+      "心",
+      "必"
+    ],
+    "text": "斜钩需兼顾倾斜与弯曲，避免过直或过弯，钩向上；卧钩则向右下弧行，最后向左上出钩。",
+    "practice": "比较“戈”与“心”的钩形，先描出大致弧线，再临写，检查两种钩是否混同。",
+    "conditions": "本书为硬笔楷书语境。弧度须参照相应字例，本页没有给出适用于所有字的弧度数值。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第7页、页脚006。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-011",
+    "bookId": "strokes",
+    "pdfPage": 8,
+    "printedPage": "007",
+    "title": "横撇兼顾横短、撇长与转角",
+    "kind": "paraphrase",
+    "topics": [
+      "笔法",
+      "组合笔画"
+    ],
+    "structures": [],
+    "components": [],
+    "characters": [
+      "又",
+      "反"
+    ],
+    "text": "横撇由横和撇组成，本页强调横较短、撇较长，并结合转角与撇段长度共同把握形态。",
+    "practice": "临写“又”和“反”，比较横、撇的长短关系，检查转角是否使字形僵硬。",
+    "conditions": "本书为硬笔楷书语境。仅为本页横撇范例的写法；转角不设为全字库统一参数。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第8页、页脚007。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-012",
+    "bookId": "strokes",
+    "pdfPage": 8,
+    "printedPage": "007",
+    "title": "横折提要紧凑地衔接提画",
+    "kind": "paraphrase",
+    "topics": [
+      "笔法",
+      "组合笔画",
+      "偏旁"
+    ],
+    "structures": [],
+    "components": [
+      "讠"
+    ],
+    "characters": [
+      "说",
+      "记"
+    ],
+    "text": "横折提由横折与提连接而成，横短而上仰，整体偏长，末段提画短促有力；它与点组合可构成言字旁。",
+    "practice": "临写“说”和“记”，先单练横折提，检查横是否过长、提画是否拖沓。",
+    "conditions": "本书为硬笔楷书语境。适用于本页言字旁相关范例。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第8页、页脚007。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-013",
+    "bookId": "strokes",
+    "pdfPage": 9,
+    "printedPage": "008",
+    "title": "横折钩与横折斜钩的形态区别",
+    "kind": "paraphrase",
+    "topics": [
+      "笔法",
+      "组合笔画"
+    ],
+    "structures": [],
+    "components": [],
+    "characters": [
+      "月",
+      "周",
+      "刀",
+      "力"
+    ],
+    "text": "横折钩强调竖段直、折角明确和短钩；横折斜钩则将相应折角、竖钩部分作内收处理，形态有所变化。",
+    "practice": "比较“月”与“力”的相关笔画，观察竖段方向和内收幅度，再分别临写。",
+    "conditions": "本书为硬笔楷书语境。本条比较本页两类组合笔画，不将其中一种强行套用于另一种。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第9页、页脚008。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-014",
+    "bookId": "strokes",
+    "pdfPage": 9,
+    "printedPage": "008",
+    "title": "横折弯钩要连贯并稳住底部",
+    "kind": "paraphrase",
+    "topics": [
+      "笔法",
+      "组合笔画"
+    ],
+    "structures": [],
+    "components": [],
+    "characters": [
+      "乙",
+      "九"
+    ],
+    "text": "横折弯钩的横略上仰，折角明确，弯钩部分连续完成；下段横画应平稳，最后向上出钩。",
+    "practice": "临写“乙”和“九”，检查底部横向段是否失稳，弯转是否断成零散笔段。",
+    "conditions": "本书为硬笔楷书语境。该页同时讲横折抛钩，本条仅摘要横折弯钩，避免混用两者。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第9页、页脚008。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-015",
+    "bookId": "strokes",
+    "pdfPage": 10,
+    "printedPage": "009",
+    "title": "耳刀旁中的横撇弯钩有左右差异",
+    "kind": "paraphrase",
+    "topics": [
+      "笔法",
+      "偏旁",
+      "组合笔画"
+    ],
+    "structures": [
+      "左右结构"
+    ],
+    "components": [
+      "阝"
+    ],
+    "characters": [
+      "阿",
+      "那"
+    ],
+    "text": "横撇弯钩需要连贯成笔，横撇段略短、弯钩有力。本页说明用于左耳刀时较窄，用于右耳刀时较宽。",
+    "practice": "比较“阿”和“那”的耳刀旁，在同样大小的格内观察左右耳刀的宽窄差异。",
+    "conditions": "本书为硬笔楷书语境。须先辨别耳刀旁在左还是在右；这里的左右形体比较不代表二者字源相同。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第10页、页脚009。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-016",
+    "bookId": "strokes",
+    "pdfPage": 10,
+    "printedPage": "009",
+    "title": "竖弯与竖弯钩重在自然转弯",
+    "kind": "paraphrase",
+    "topics": [
+      "笔法",
+      "组合笔画"
+    ],
+    "structures": [],
+    "components": [],
+    "characters": [
+      "四",
+      "西",
+      "儿",
+      "也"
+    ],
+    "text": "竖弯从竖自然转向右方，不宜硬折，末端不带钩；竖弯钩还须控制弧度和长度，最终向上出钩。",
+    "practice": "比较“四”与“儿”的相关笔画，先区分末端有无钩，再看转弯是否过硬。",
+    "conditions": "本书为硬笔楷书语境。竖段长度随字不同，不由本条给出固定长度。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第10页、页脚009。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-017",
+    "bookId": "strokes",
+    "pdfPage": 11,
+    "printedPage": "010",
+    "title": "竖提的竖段和提段连续衔接",
+    "kind": "paraphrase",
+    "topics": [
+      "笔法",
+      "组合笔画"
+    ],
+    "structures": [],
+    "components": [],
+    "characters": [
+      "氏",
+      "衣"
+    ],
+    "text": "竖提须保持竖段直，提段迅速有力并指向右上，两段连续写成，不应拆开。",
+    "practice": "临写“氏”和“衣”，检查竖段方向；书写时留意转提处是否断笔。",
+    "conditions": "本书为硬笔楷书语境。静态成品只支持形态比较，是否断笔需结合实际书写或轨迹。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第11页、页脚010。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-018",
+    "bookId": "strokes",
+    "pdfPage": 11,
+    "printedPage": "010",
+    "title": "撇折点须随结构调整角度",
+    "kind": "paraphrase",
+    "topics": [
+      "笔法",
+      "组合笔画",
+      "重心"
+    ],
+    "structures": [],
+    "components": [],
+    "characters": [
+      "女",
+      "母"
+    ],
+    "text": "本页将撇折点说明为斜撇与长点组合，中段较细、两端较重，并强调折角要随具体结构调整，注意重心。",
+    "practice": "临写“女”和“母”，比较转折处角度与整体稳定性，避免只追求单笔形态。",
+    "conditions": "本书为硬笔楷书语境。按本页用语保留“撇折点”名称，不用它替代其他数据库的标准笔画分类。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第11页、页脚010。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-019",
+    "bookId": "strokes",
+    "pdfPage": 12,
+    "printedPage": "011",
+    "title": "成字强化练习与空格交替编排",
+    "kind": "observation",
+    "topics": [
+      "学习方法",
+      "临写"
+    ],
+    "structures": [],
+    "components": [],
+    "characters": [
+      "永",
+      "平",
+      "书"
+    ],
+    "text": "第10课强化练习把范字行与空白田字格行交替安排，将前面笔画练习接到完整汉字练习。",
+    "practice": "从本页选“永”“平”“书”各临写一次，写后各找一处与范字不同的位置。",
+    "conditions": "本书为硬笔楷书语境。这是对页面编排的观察；所选练习次数和检查步骤由系统设计。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第12页、页脚011。text 为对页面编排或范例的观察，不是作者明示的教学规律。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-020",
+    "bookId": "strokes",
+    "pdfPage": 13,
+    "printedPage": "012",
+    "title": "强化页提供含不同部件的成字范例",
+    "kind": "observation",
+    "topics": [
+      "学习方法",
+      "临写"
+    ],
+    "structures": [],
+    "components": [],
+    "characters": [
+      "语",
+      "防",
+      "奶"
+    ],
+    "text": "本页继续采用范字与空格相接的强化练习，包含“语”“防”“奶”等带不同偏旁的范例，没有为每字附单独的文字解析。",
+    "practice": "任选一个范字，先比较偏旁与其余部分的位置，再临写；本页没有写明的用笔细节应另找证据。",
+    "conditions": "本书为硬笔楷书语境。只能引用为范例存在与版面观察，不能据此声称作者明确讲过某条迁移规则。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第13页、页脚012。text 为对页面编排或范例的观察，不是作者明示的教学规律。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-021",
+    "bookId": "strokes",
+    "pdfPage": 15,
+    "printedPage": "014",
+    "title": "单人旁的竖从撇中段略下处起笔",
+    "kind": "paraphrase",
+    "topics": [
+      "偏旁",
+      "笔画位置"
+    ],
+    "structures": [
+      "左右结构"
+    ],
+    "components": [
+      "亻"
+    ],
+    "characters": [
+      "化",
+      "仇",
+      "但",
+      "使"
+    ],
+    "text": "单人旁由斜撇和垂露竖构成，竖应写直，竖的起笔与撇的中部略下位置相接；短撇不宜过于短促。",
+    "practice": "临写“化”“但”，比较竖起点在撇上的位置，检查偏旁是否歪斜。",
+    "conditions": "本书为硬笔楷书语境。本条仅适用于单人旁，不能移作独体“人”的完整写法。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第15页、页脚014。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-022",
+    "bookId": "strokes",
+    "pdfPage": 15,
+    "printedPage": "014",
+    "title": "双人旁上撇较短并为右部让位",
+    "kind": "paraphrase",
+    "topics": [
+      "偏旁",
+      "避让"
+    ],
+    "structures": [
+      "左右结构"
+    ],
+    "components": [
+      "彳"
+    ],
+    "characters": [
+      "行",
+      "征",
+      "律"
+    ],
+    "text": "双人旁的第二撇略长，从第一撇中部附近向下衔接；竖用垂露，可略向左斜，给右侧部分留出空间。",
+    "practice": "临写“行”“律”，先看两撇长短，再检查竖与右部是否挤靠。",
+    "conditions": "本书为硬笔楷书语境。适用于本页双人旁写法，不套用于形似的其他偏旁。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第15页、页脚014。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-023",
+    "bookId": "strokes",
+    "pdfPage": 18,
+    "printedPage": "017",
+    "title": "言字旁窄长并注意点与折的位置",
+    "kind": "paraphrase",
+    "topics": [
+      "偏旁",
+      "笔画位置",
+      "比例"
+    ],
+    "structures": [
+      "左右结构"
+    ],
+    "components": [
+      "讠"
+    ],
+    "characters": [
+      "识",
+      "许",
+      "诗",
+      "调"
+    ],
+    "text": "言字旁的点在折笔上方偏右，短横向右上取势，折角与点相对，整体宜窄长，并与右部大小协调。",
+    "practice": "临写“识”和“诗”，比较点、折角的相对位置，再观察偏旁是否挤占右部空间。",
+    "conditions": "本书为硬笔楷书语境。本页未给定左右宽度的数字比例。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第18页、页脚017。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-024",
+    "bookId": "strokes",
+    "pdfPage": 18,
+    "printedPage": "017",
+    "title": "绞丝旁两撇折有同向与变化",
+    "kind": "paraphrase",
+    "topics": [
+      "偏旁",
+      "笔法"
+    ],
+    "structures": [
+      "左右结构"
+    ],
+    "components": [
+      "纟"
+    ],
+    "characters": [
+      "纸",
+      "结",
+      "统",
+      "练"
+    ],
+    "text": "绞丝旁的两撇折方向一致，但角度和粗细须有变化；第一撇折角度稍大，提不宜过长，整体避免臃肿。",
+    "practice": "临写“纸”和“结”，对照两撇折的角度，再检查末提是否过长。",
+    "conditions": "本书为硬笔楷书语境。适用于本页简体绞丝旁，不自动推广为繁体糸旁的笔画说明。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第18页、页脚017。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-025",
+    "bookId": "strokes",
+    "pdfPage": 22,
+    "printedPage": "021",
+    "title": "提手旁左展右收并给右部留位",
+    "kind": "paraphrase",
+    "topics": [
+      "偏旁",
+      "避让",
+      "比例"
+    ],
+    "structures": [
+      "左右结构"
+    ],
+    "components": [
+      "扌"
+    ],
+    "characters": [
+      "扔",
+      "批",
+      "挂",
+      "推"
+    ],
+    "text": "提手旁竖钩挺直，整体左侧展开、右侧收束；短横偏左，右侧露出较少，提画有力但不宜过度伸出。",
+    "practice": "临写“扔”和“挂”，只比较横与提伸向右侧的长度，检查右部是否被挤压。",
+    "conditions": "本书为硬笔楷书语境。这是偏旁内部伸展的相对关系，不是固定的左窄右宽百分比。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第22页、页脚021。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-026",
+    "bookId": "strokes",
+    "pdfPage": 22,
+    "printedPage": "021",
+    "title": "竖心旁两点与中竖有方向变化",
+    "kind": "paraphrase",
+    "topics": [
+      "偏旁",
+      "疏密",
+      "笔画位置"
+    ],
+    "structures": [
+      "左右结构"
+    ],
+    "components": [
+      "忄"
+    ],
+    "characters": [
+      "怀",
+      "恰",
+      "惯",
+      "情"
+    ],
+    "text": "竖心旁以中竖为关键，整体窄长，竖用垂露；左点不宜贴竖太近，右点可稍平，三笔方向应有变化。",
+    "practice": "临写“怀”和“情”，比较左点与竖的间隔，再看两点方向是否机械相同。",
+    "conditions": "本书为硬笔楷书语境。点的位置与间距需参照具体范字，不能按同一数值复制。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第22页、页脚021。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-027",
+    "bookId": "strokes",
+    "pdfPage": 28,
+    "printedPage": "027",
+    "title": "左耳刀与右耳刀分别处理大小和竖形",
+    "kind": "paraphrase",
+    "topics": [
+      "偏旁",
+      "比例",
+      "笔法"
+    ],
+    "structures": [
+      "左右结构"
+    ],
+    "components": [
+      "阝"
+    ],
+    "characters": [
+      "际",
+      "院",
+      "部",
+      "郎"
+    ],
+    "text": "左耳刀较小巧、窄长，用垂露竖并略向左斜；右耳刀较大、形长，上紧下松，竖用悬针并略向右下取势。",
+    "practice": "比较“际”“院”与“部”“郎”，观察左右耳刀的体量和竖末端，再分别临写。",
+    "conditions": "本书为硬笔楷书语境。必须区分左右位置；本条归纳形态处理，不涉及两种偏旁字源。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第28页、页脚027。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-028",
+    "bookId": "strokes",
+    "pdfPage": 28,
+    "printedPage": "027",
+    "title": "单耳刀短小，竖画保持直",
+    "kind": "paraphrase",
+    "topics": [
+      "偏旁",
+      "笔法"
+    ],
+    "structures": [
+      "左右结构"
+    ],
+    "components": [
+      "卩"
+    ],
+    "characters": [
+      "印",
+      "却",
+      "即",
+      "卸"
+    ],
+    "text": "单耳部分不宜拉得过长，横折斜钩的横略向右上，竖的下部向内斜；竖画要直，可用悬针，也可用垂露。",
+    "practice": "临写“印”和“即”，先看单耳部分是否过长，再观察竖画方向。",
+    "conditions": "本书为硬笔楷书语境。本页“单耳刀”所指为卩，与左右耳刀阝分开检索。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第28页、页脚027。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-029",
+    "bookId": "strokes",
+    "pdfPage": 34,
+    "printedPage": "033",
+    "title": "四字头宽扁，短竖并非机械平行",
+    "kind": "paraphrase",
+    "topics": [
+      "偏旁",
+      "比例",
+      "笔画位置"
+    ],
+    "structures": [
+      "上下结构"
+    ],
+    "components": [
+      "罒"
+    ],
+    "characters": [
+      "罗",
+      "罢",
+      "罪",
+      "置"
+    ],
+    "text": "四字头整体宽扁，上宽下窄；四个短竖长度大体相当，但不能写成完全平行的栅栏。",
+    "practice": "临写“罗”和“罪”，比较外框宽高与各短竖方向，不只数格子追求绝对平行。",
+    "conditions": "本书为硬笔楷书语境。适用于本页作字头的罒，不用于独体“四”的全部结构。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第34页、页脚033。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  },
+  {
+    "id": "strokes-030",
+    "bookId": "strokes",
+    "pdfPage": 34,
+    "printedPage": "033",
+    "title": "雨字头扁而清楚，四点各有位置",
+    "kind": "paraphrase",
+    "topics": [
+      "偏旁",
+      "比例",
+      "笔画位置"
+    ],
+    "structures": [
+      "上下结构"
+    ],
+    "components": [
+      "雨"
+    ],
+    "characters": [
+      "雪",
+      "零",
+      "震",
+      "霸"
+    ],
+    "text": "雨字头宜扁，短竖居中，左侧两点略低、右侧两点略高，四点形态应有区别，各笔交代清楚。",
+    "practice": "临写“雪”和“震”，先检查中竖，再比较左右两组点的位置，避免挤成墨团。",
+    "conditions": "本书为硬笔楷书语境。本条针对雨字头位置，不将同一高低关系无条件用于独体“雨”。",
+    "reviewed": true,
+    "sourceNote": "已由 AI 目视核对用户提供扫描件的 PDF 第34页、页脚033。text 为本页教学说明的简短释义，不是逐字引文。practice 为系统据此设计的练习建议；reviewed 表示页面视觉核对，不表示书法专家审定。"
+  }
+]
