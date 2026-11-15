@@ -1,60 +1,67 @@
-# 墨习 · 字帖书法教学原型
+# 墨习 · 查字与书写笔记
 
-这是一个可部署到 GitHub Pages 的硬笔楷书学习原型：查询汉字，逐笔观察开源参考字形，检索教材摘要与出处，在本地查阅对应 PDF，并进行临写与结构比较。它把教材证据、概括和 AI 推演分别呈现。
+墨习是可部署到 GitHub Pages 的汉字学习工具。本版围绕查字、笔顺、部首部件与结构资料、个人修订，以及可复用的手工笔记展开。页面和笔顺数据自托管，个人资料在当前浏览器中保存，可通过 JSON 导入与导出。
 
-当前使用的三份教材合计 **132 个 PDF 页面**：常用字字帖 36 页、笔画偏旁 48 页、间架结构 48 页。仅部分页面经过 AI 视觉核对，未经过书法专家审定。书名中的“5000”是原教材名称，不表示软件已识别 5000 字、已完整索引全书或已支持所有汉字。笔顺覆盖范围以随站点发布的数据为准。
+本版不提供 PDF 导入、AI 对话或临摹画板入口。旧版教材摘要、PDF 渲染代码与模型接口仍保留在仓库历史和相应源文件中，但不进入新版站点构建。
 
-## 现阶段边界
+## 数据与学习边界
 
-- 本项目按硬笔楷书语境处理这些教材，不据此声称已学习毛笔笔锋和真实用力。
-- 动画字形来自 Make Me a Hanzi / Arphic 开源数据，**不是卢中南真迹**。书法家范字须查阅用户自己的教材。
-- 教材卡片是有页码的简短释义或页面观察。`reviewed` 表示 AI 已看过相应扫描页面，不表示专家认可结论。练习建议与迁移推演不应冒充作者原文。
-- 本地写字、照片比较只能辅助观察形态；不等于专业书法评分，不可从单张照片断言实际运笔力度、速度或笔锋。
-- GitHub Pages 只托管静态前端。AI 对话还需要单独部署 `worker/` 服务并配置模型 API，本仓库交付本身不代表 AI 服务已部署或完成端到端联调。
+- 本次数据快照含 **9574 条汉字记录**及对应笔画图形，包含简体和繁体。这是当前数据集覆盖量，不表示覆盖全部汉字、所有异体字或所有地区的笔顺规范；实际数字以 `data/source-manifest.json` 和页面统计为准。
+- 笔顺与参考字形取自 Make Me a Hanzi / Arphic 开源数据，不是某位书法家的真迹。单字是否可演示取决于本地数据是否包含它，软件不会用模型或普通字体补造缺失笔顺。
+- 部首、IDS 拆分与结构分类是参考资料。IDS 描述部件组合关系，不能完整表达书法教学中的间架结构、疏密、位置与精确比例；含未知部件或尚未核对的项目会保留其不确定性。
+- 用户可以记录自己的部首、部件与结构修订。修订属于个人资料，不会改写或冒充上游字库事实。个人笔记也不是经过专家审定的教学结论。
+- 界面宋体仅用于标题与阅读排版，不能作为书法家的真实范字。
+
+## 使用与保存
+
+在查字页输入一个汉字，查看基础资料、田字格参考和逐笔演示；结合笔画观察，把自己确认过的结构或部件修订保存到本地。手工笔记可在相关汉字、部件或结构的学习中复用，使用时仍需判断适用条件。
+
+个人修订与笔记不会自动云同步，也不会因 GitHub Pages 发布更新而写入 GitHub 仓库。它们与浏览器、设备和站点来源有关，换浏览器、换域名或清除站点数据后不会自动出现。新版使用独立存储，保留旧版本的浏览器数据，不自动清除或覆盖旧记录。
+
+需要跨设备或长期保存时，使用页面的 JSON 导出功能下载个人备份，再在目标浏览器导入。导入前先导出已有资料，并核对导入结果。个人备份包含应用的个人资料，**不包含笔顺图形和整套字典**；重新运行页面时仍需要站点自带的数据文件。不要把私人笔记或备份提交到公共仓库。
 
 ## 本地运行
 
-使用 Node.js 22 或更新版本以及 Python 3。无需 npm 安装第三方前端包，静态库和字形数据已经自托管。
+需要 Node.js 24 或更新版本。前端没有需要安装的 npm 运行时依赖，Hanzi Writer、字形和界面字体均随站点自托管。
 
-在仓库目录执行：
+在仓库根目录执行：
 
 ```powershell
-node --test tests/static.test.mjs tests/worker.test.mjs
+node --test tests/model.test.mjs tests/store.test.mjs tests/static.test.mjs
 node tools/build-static.mjs
-python -m http.server 8000 --directory dist
+node tools/dev-server.mjs
 ```
 
-可选的12项 DOM 交互测试需要仅用于开发的 jsdom 26.1.0；可在独立测试目录安装并通过 `MOXI_TEST_DEPS` 指定路径，具体命令见 `tests/frontend.test.mjs` 文件开头。没有依赖时该组会显式跳过。DOM 模拟验证导航、引用、表单和画板操作逻辑，不能替代真实浏览器布局、SVG 动画、触控和画板像素验证。
+打开 `http://127.0.0.1:4173`。可用 `node tools/dev-server.mjs --port 8000` 更换端口。开发服务器仅监听本机，提供 `dist/` 中的文件，并为 JavaScript、JSON、CSS 和 WOFF2 返回相应 MIME 类型；用 `Ctrl+C` 停止。
 
-然后打开 `http://localhost:8000`。不要通过 `file://` 双击 HTML，浏览器模块和 JSON 加载需要 HTTP 服务。
+也可用 `python -m http.server 8000 --directory dist` 提供静态服务；若系统将 `.js` 识别为非 JavaScript MIME，请改用上述 Node 预览器。不要通过 `file://` 双击 HTML，模块和 JSON 加载需要 HTTP 服务。
 
-构建只复制 `index.html`、`styles.css`、`app.js`、`pdf-local.js`、`data/`、`vendor/` 与 `licenses/`。它会检查输入、清理本项目内经过路径验证的 `dist/`，再重新生成产物，支持重复构建。允许树内发现 PDF、图片、凭据文件、已知密钥格式或符号链接时会拒绝构建。该检查用于减少误发布，不能替代提交前检查。
+`npm test`、`npm run build`、`npm run preview` 分别对应上述测试、构建和预览步骤。旧版 Worker 的测试保留在仓库，但不是本版发布门禁。
 
-## PDF 与个人数据
+可选的 DOM 交互测试使用 jsdom 26.1.0，可在独立开发目录安装并通过 `MOXI_TEST_DEPS` 指定位置，再运行 `npm run test:ui`。它执行实际页面、应用及数据模块，覆盖笔记原文复用、修订、导入冲突、存储失败和真实笔顺库的 SVG 创建。缺少依赖时会明确跳过；这类测试不能替代真实浏览器的布局、动画帧和触控验证。
 
-教材原件不在仓库和 `dist/` 中。选择 PDF 后，由浏览器中的 PDF.js 本地渲染；刷新或关闭页面后可能需要重新选择文件。书目中的 SHA-256 用于匹配教材版本，不代表任何教材授权。页面引用按 PDF 页序（从 1 起）定位，印刷页码另列。
+## 构建范围
 
-不要在公共仓库中保存教材、页面截图、练习照片、API 密钥或本地数据库。清除浏览器站点数据可能移除本地学习记录；需要长期保存时应先自行备份。启用远程 AI 后，浏览器会把提问、查询汉字和所选规则 ID 发送给配置的服务；服务再将相关摘要与问题交给模型。PDF、照片和画板轨迹不在此接口的请求中。服务的日志、保留策略和访问控制需由部署者另外配置。
+发布白名单仅包括：
 
-## GitHub Pages 部署
+- `index.html`、`styles.css`、`app.js`、`model.js`，以及存在时的 `store.js`。
+- `data/characters.json`、`data/source-manifest.json` 和 `data/characters/` 中逐字 JSON。
+- `vendor/hanzi-writer.min.js`、`vendor/fonts/moxi-book-serif.woff2` 和 `licenses/`。
 
-建议仓库为 `petersmith030201/moxi-calligraphy`。这是建议名称，本说明不表示远程仓库已经创建或站点已经发布。
+构建不会原样复制整个 `data/` 或 `vendor/`。教材摘要、书目、PDF.js、`pdf-local.js` 和 `worker/` 留在源码目录中，不进入 `dist/`。构建先检查输入，再安全重建本项目的 `dist/`，以免旧文件残留；发布资产总大小限制为 50 MB。允许树内的 PDF、图片、符号链接、凭据文件和常见密钥内容会使构建失败；检查不能代替提交前审阅。
 
-1. 将本目录作为仓库根目录提交到 GitHub，默认分支使用 `main`。先检查提交清单中没有 PDF、照片、密钥及 `dist/`。
-2. 在仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**。
-3. 推送到 `main`，或在 Actions 手动运行 **Deploy calligraphy site**。工作流先验证数据并构建，只上传 `dist/`，随后部署到 `github-pages` 环境。
-4. 部署成功后的 URL 以 Actions 输出为准。若采用上述用户名与仓库名，通常形如 `https://petersmith030201.github.io/moxi-calligraphy/`。
+静态测试核对所有字形与元数据的一一对应、SVG 路径与笔画中线、来源许可、无远程静态依赖及旧载荷隔离，也验证重复构建和污染输入拒绝。数据一致性检查不能证明每个汉字的教学分类或地区笔顺均正确。
 
-工作流使用 GitHub 官方 Actions，部署阶段仅授予 Pages 写入和 OIDC 权限，不需要把个人访问令牌或模型 API 密钥写入前端。参考 [GitHub Pages 自定义工作流说明](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages) 和 [官方静态站点工作流](https://github.com/actions/starter-workflows/blob/main/pages/static.yml)。
+## GitHub Pages
 
-## 配置 AI 服务
+本仓库面向 `petersmith030201/moxi-calligraphy`，默认分支为 `main`。在 GitHub 仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**。
 
-依据 `worker/` 内的实际部署说明配置模型网关、服务器端 API 密钥和访问控制，再将服务地址填入页面 AI 设置。模型密钥只保存在服务端的 secret store，不写进 HTML、JavaScript、JSON、GitHub Pages 或公开仓库。
+推送到 `main` 或手动运行 **Deploy calligraphy site** 后，工作流使用 Node.js 24 运行本版模型与静态测试，只上传 `dist/`，随后部署到 `github-pages` 环境。站点地址以 Actions 的成功部署输出为准，通常为 `https://petersmith030201.github.io/moxi-calligraphy/`。
 
-应先用无敏感信息的问题验证连通性和引用约束，再启用真实学习会话。AI 必须只使用检索得到的证据 ID 引用教材；无证据时说明缺少直接依据，将迁移建议标成推演，不生成虚构的书页、原文或作者结论。当前仓库不承诺服务端已配置、调用成功或推演已由教师验证。
+工作流只给构建阶段仓库只读权限，给部署阶段 Pages 与 OIDC 所需权限。新版没有模型 API，因此无需配置模型密钥。参考 [GitHub Pages 自定义工作流说明](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)。
 
-## 目录与授权
+## 恢复旧版与授权
 
-`data/` 保存书目、摘要和汉字数据；`vendor/` 保存本地前端库；`licenses/` 保存第三方许可；`worker/` 是独立服务端；`tools/build-static.mjs` 生成发布白名单；`tests/` 检查数据与静态交付边界。
+旧版源码已保留在 Git 标签 `v0.1`。需要单独查看时，可在干净目录运行 `git worktree add ../moxi-v0.1 v0.1` 创建独立旧版工作目录。恢复旧版代码不会自动迁移新版资料，也不要通过清除浏览器存储来切换版本。
 
-原创代码使用根目录 MIT 许可。第三方库、笔顺字形、字典与教材分别适用独立条款，详见 [THIRD_PARTY.md](THIRD_PARTY.md) 与 `licenses/`。代码开源不等于教材内容可公开再分发。
+原创代码适用根目录 MIT 许可；第三方库、字典、图形、界面字体及旧版教材分别适用独立条款。来源与许可见 [THIRD_PARTY.md](THIRD_PARTY.md)、`data/source-manifest.json` 与 `licenses/`。代码开源不等于教材可公开再分发。

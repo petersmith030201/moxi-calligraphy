@@ -1,11 +1,13 @@
 {
   "name": "moxi-calligraphy",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": { "node": ">=24" },
   "scripts": {
     "build": "node tools/build-static.mjs",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/model.test.mjs tests/store.test.mjs tests/static.test.mjs",
+    "test:ui": "node --experimental-vm-modules --test tests/frontend.test.mjs",
+    "preview": "node tools/dev-server.mjs"
   }
 }

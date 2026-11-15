@@ -23,9 +23,9 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-      - name: Check data and source references
-        run: node --test tests/static.test.mjs tests/worker.test.mjs
+          node-version: '24'
+      - name: Check model and static release
+        run: node --test tests/model.test.mjs tests/store.test.mjs tests/static.test.mjs
       - name: Build approved public assets
         run: node tools/build-static.mjs
       - name: Upload static site

@@ -1,4 +1,7 @@
 {
+  "schemaVersion": 1,
+  "dataset": "Make Me a Hanzi",
+  "sourceUrl": "https://github.com/skishore/makemeahanzi",
   "retrievedAt": "2026-11-15",
   "resources": [
     {
@@ -12,10 +15,47 @@
     {
       "file": "hanzi-writer-3.7.3.tgz",
       "sha256": "015acae9c2aa2779c3c398d34efacd034239251d4795573eeaaa60c0b60f56f2"
-    },
-    {
-      "file": "pdfjs-dist-6.5.438.tgz",
-      "sha256": "7461aefcd27c4ef0dd76f9ca5760f09466eb6b3f934432670c12132e7b3d6faa"
     }
-  ]
+  ],
+  "metadataCount": 9574,
+  "strokeCount": 9574,
+  "strokeTotal": 112617,
+  "rejectedCharacters": [],
+  "licenses": [
+    "LGPL-3.0-or-later（字典）",
+    "Arphic Public License（图形）"
+  ],
+  "coverageNote": "覆盖本次上游快照中通过笔画路径和轨迹校验的字形，包含简体、繁体及部分部件；不代表覆盖所有汉字。缺字不以另一简繁或地域字形替代。",
+  "glyphCaveat": "数据未提供大陆、台湾、香港标准字形的逐项选择，笔顺与字形可能存在地域或版本差异；IDS和部首均为开源参考，可由用户修订，未知拆分不推定为独体字。",
+  "structureCorrections": {
+    "characters": [
+      "一",
+      "三",
+      "上",
+      "下",
+      "中",
+      "二",
+      "人",
+      "十",
+      "口",
+      "土",
+      "大",
+      "天",
+      "小",
+      "山",
+      "川",
+      "工",
+      "日",
+      "月",
+      "木",
+      "水",
+      "永",
+      "火",
+      "田",
+      "目"
+    ],
+    "structure": "独体字",
+    "source": "本站整理的24字可审阅参考校正；不是全面规范认证，允许用户修订。"
+  },
+  "aliasesNote": "个人备份中的aliases是保留的扩展字段，当前不参与匹配；不默认合并水与氵、手与扌，简繁按实际字符分别查询。"
 }

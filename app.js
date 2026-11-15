@@ -1,497 +1,223 @@
+import { analyzeCharacter, matchNotes, normalizeNote, normalizeOverride, makeBackup, planImport, applyImport } from './model.js';
+import { readNotebook, saveNotebook, readPreviousNotebook } from './store.js';
+
 const $ = (id) => document.getElementById(id);
-const STORAGE_KEY = 'moxi.learning.v1';
-const ENDPOINT_KEY = 'moxi.endpoint.v1';
-const state = { character: '永', characters: {}, books: [], rules: [], matches: [], writer: null, strokeData: null, strokeIndex: -1, paused: false, loadingVersion: 0, knowledgeReady: false, characterReady: false, bookId: 'all', favorites: [], records: [], endpoint: '', accessCode: '', controller: null, page: 'learn' };
-const drawing = { strokes: [], current: null, character: '永', photoUrl: null };
+const positions = { any: '不限位置', left: '左侧', right: '右侧', top: '上方', bottom: '下方', inside: '内部', outside: '外部', center: '中间', standalone: '独立成字' };
+const kinds = { character: '整字', component: '部件', structure: '结构' };
+const commonNames = { 氵: '三点水', 扌: '提手旁', 讠: '言字旁', 亻: '单人旁', 忄: '竖心旁' };
+const state = { character: '永', metadata: {}, data: { notes: [], overrides: [], aliases: [] }, analysis: null, writer: null, strokeData: null, strokeIndex: -1, paused: false, loadVersion: 0, importPlan: null, confirmAction: null, unsaved: false };
 let toastTimer;
-
-function node(tag, className, text) {
-  const el = document.createElement(tag);
-  if (className) el.className = className;
-  if (text !== undefined && text !== null) el.textContent = String(text);
-  return el;
-}
-function strings(value) { return Array.isArray(value) ? value.filter((v) => typeof v === 'string') : typeof value === 'string' && value ? [value] : []; }
-function plain(value) { return Array.isArray(value) ? value.filter((v) => typeof v === 'string').join('；') : typeof value === 'string' ? value : ''; }
+function element(tag, className, text) { const el = document.createElement(tag); if (className) el.className = className; if (text !== undefined) el.textContent = String(text); return el; }
+function button(text, action, className = 'text-button') { const el = element('button', className, text); el.type = 'button'; el.addEventListener('click', action); return el; }
+function text(value) { if (typeof value === 'string') return value; if (Array.isArray(value)) return value.map(text).filter(Boolean).join('；'); if (value && typeof value === 'object') return Object.entries(value).map(([k, v]) => `${k}：${text(v)}`).join('；'); return ''; }
+function status(id, message, error = false) { $(id).textContent = message; $(id).classList.toggle('error', error); }
+function toast(message) { $('toast').textContent = message; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { $('toast').hidden = true; }, 3500); }
 function validCharacter(value) { return typeof value === 'string' && Array.from(value.trim()).length === 1 && /^\p{Script=Han}$/u.test(value.trim()); }
-function toast(message) {
-  $('toast').textContent = message;
-  $('toast').hidden = false;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { $('toast').hidden = true; }, 3500);
+function showPage(page) {
+  if (!['lookup', 'notebook', 'data'].includes(page)) return;
+  document.querySelectorAll('.page').forEach((el) => { el.hidden = el.id !== `page-${page}`; });
+  document.querySelectorAll('.nav-button').forEach((el) => { const active = el.dataset.page === page; el.classList.toggle('active', active); if (active) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current'); });
+  history.replaceState(null, '', `#${page}`); window.scrollTo({ top: 0, behavior: 'instant' });
 }
-function status(id, message, error = false) {
-  const el = $(id);
-  el.textContent = message;
-  el.classList.toggle('error', error);
+function openDialog(id) { const el = $(id); if (!el.open) el.showModal(); }
+function closeDialog(id) { $(id).close(); }
+function confirmAction(title, message, action, label = '确认') { $('confirm-title').textContent = title; $('confirm-message').textContent = message; $('confirm-yes').textContent = label; state.confirmAction = action; openDialog('confirm-dialog'); }
+function showStorageFailure(message) { state.unsaved = true; $('storage-warning').hidden = false; $('storage-warning-text').textContent = `${message} 当前改动保留在内存，尚未确认写入浏览器。请立即导出备份，关闭或刷新可能丢失。`; $('storage-status').textContent = '存在未保存数据'; $('storage-status').classList.add('unsaved'); }
+function commit(data, message) {
+  state.data = data;
+  const result = saveNotebook(data);
+  state.importPlan = null; $('import-preview').hidden = true;
+  if (result.saved) { state.unsaved = false; $('storage-warning').hidden = true; $('storage-status').textContent = '已保存在本机'; $('storage-status').classList.remove('unsaved'); toast(message); }
+  else showStorageFailure(result.error || '浏览器存储失败。');
+  renderAll();
+  return result.saved;
 }
-function loadLocalData() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    state.favorites = Array.isArray(saved.favorites) ? [...new Set(saved.favorites.filter(validCharacter))].slice(0, 1000) : [];
-    state.records = sanitizeRecords(saved.records).slice(0, 300);
-    const endpoint = localStorage.getItem(ENDPOINT_KEY);
-    if (endpoint) state.endpoint = validateEndpoint(endpoint);
-  } catch { /* Invalid or unavailable local storage must not prevent learning. */ }
-  $('api-endpoint').value = state.endpoint;
-}
-function persist() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, favorites: state.favorites, records: state.records })); }
-  catch { toast('浏览器存储不可用或空间不足，请导出记录备份。'); }
-}
-function addRecord(type, character, detail = '') {
-  const latest = state.records[0];
-  if (type === 'learn' && latest?.type === type && latest.character === character && Date.now() - new Date(latest.at).getTime() < 60000) return;
-  state.records.unshift({ type, character, at: new Date().toISOString(), detail: detail.slice(0, 160) });
-  state.records = state.records.slice(0, 300);
-  persist();
-  renderRecords();
-}
-function sanitizeRecords(value) {
-  if (!Array.isArray(value)) return [];
-  return value.slice(0, 1000).filter((r) => r && validCharacter(r.character) && ['learn', 'practice'].includes(r.type) && typeof r.at === 'string' && Number.isFinite(Date.parse(r.at))).map((r) => ({ type: r.type, character: r.character.trim(), at: new Date(r.at).toISOString(), detail: typeof r.detail === 'string' ? r.detail.slice(0, 160) : '' }));
-}
-function showPage(page, focusSettings = false) {
-  if (!['learn', 'practice', 'mine'].includes(page)) return;
-  state.page = page;
-  document.querySelectorAll('.page').forEach((el) => { const active = el.id === `page-${page}`; el.hidden = !active; el.classList.toggle('active', active); });
-  document.querySelectorAll('.nav-item').forEach((el) => { const active = el.dataset.page === page; el.classList.toggle('active', active); if (active) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current'); });
-  if (page === 'mine') renderRecords();
-  if (page === 'practice') renderDrawing();
-  window.history.replaceState(null, '', `#${page}`);
-  if (focusSettings) { $('ai-settings').scrollIntoView({ behavior: 'smooth', block: 'center' }); $('api-endpoint').focus({ preventScroll: true }); }
-  else window.scrollTo({ top: 0, behavior: 'instant' });
-}
-
-async function fetchJson(url) {
-  const response = await fetch(url, { cache: 'no-cache', credentials: 'omit' });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return response.json();
-}
-async function loadKnowledge() {
-  const results = await Promise.allSettled([fetchJson('./data/characters.json'), fetchJson('./data/knowledge.json')]);
-  if (results[0].status === 'fulfilled' && results[0].value && typeof results[0].value === 'object') { state.characters = results[0].value; state.characterReady = true; }
-  else status('search-feedback', '基础字典加载失败；仍可尝试笔顺数据。请通过本地 HTTP 服务打开网页。', true);
-  if (results[1].status === 'fulfilled' && results[1].value && typeof results[1].value === 'object') {
-    const knowledge = results[1].value;
-    state.books = Array.isArray(knowledge.books) ? knowledge.books.filter((b) => b && typeof b.id === 'string' && typeof b.title === 'string') : [];
-    const knownBooks = new Set(state.books.map((b) => b.id));
-    const knownIds = new Set();
-    state.rules = Array.isArray(knowledge.rules) ? knowledge.rules.filter((r) => {
-      if (!r || typeof r.id !== 'string' || knownIds.has(r.id) || !knownBooks.has(r.bookId) || !Number.isInteger(r.pdfPage) || r.pdfPage < 1 || typeof r.text !== 'string') return false;
-      knownIds.add(r.id); return true;
-    }) : [];
-    state.knowledgeReady = true;
+function overrideMap() { return Object.fromEntries(state.data.overrides.map((item) => [item.character, item])); }
+function renderAnalysis() {
+  state.analysis = analyzeCharacter(state.character, state.metadata, overrideMap());
+  const analysis = state.analysis;
+  $('current-character').textContent = state.character; $('sheet-character').textContent = state.character;
+  $('fact-count').textContent = state.metadata[state.character]?.strokesCount ?? state.strokeData?.strokes?.length ?? '暂无数据';
+  $('fact-radical').textContent = analysis.radical || '待核实'; $('fact-structure').textContent = analysis.structure || '待核实'; $('fact-decomposition').textContent = analysis.decomposition || '暂无可靠拆分';
+  $('analysis-label').textContent = analysis.userEdited ? '用户修订 · 仅本机' : '数据库结构参考'; $('analysis-label').classList.toggle('user-edited', !!analysis.userEdited);
+  $('analysis-source').textContent = `分析来源：${text(analysis.source) || (analysis.userEdited ? '用户手动修订' : '当前无可用数据')}。结构依据：${analysis.structureSource || '待核实'}。`;
+  $('analysis-uncertainty').textContent = `${analysis.uncertain ? '部分拆分或结构尚待核对。\n' : ''}${analysis.reviewNotes || ''}\n数据库结构与 IDS 描述为组合参考，不等于唯一的教学拆分；不据此虚构空间比例或书法重心。部件可点击记录写法。`;
+  $('component-list').replaceChildren();
+  for (const part of analysis.components || []) {
+    const chip = button('', () => openNote({ kind: 'component', target: part.name, position: part.position || 'any', scope: part.depth > 1 ? 'any-depth' : 'top' }), 'component-chip');
+    chip.append(document.createTextNode(part.name), element('small', '', `${part.depth > 1 ? '内层·' : ''}${positions[part.position] || '位置待核实'}${commonNames[part.name] ? ` · ${commonNames[part.name]}` : ''}`)); chip.title = `记录部件“${part.name}”在${positions[part.position] || '该位置'}的写法`; $('component-list').append(chip);
   }
-  renderBookFilter(); renderBooks(); renderCharacterFacts(); renderRules(); updateAIState();
+  if (!analysis.components?.length) $('component-list').append(element('p', 'small-note', '暂无可靠部件数据，可手动修订后再匹配笔记。'));
+  $('add-character-note').textContent = `为「${state.character}」记一法 ＋`;
+  $('add-structure-note').disabled = !analysis.structure || analysis.structure === '结构待核对';
 }
-function renderBookFilter() {
-  $('book-filter').replaceChildren(node('option', '', '全部已整理教材'));
-  $('book-filter').firstChild.value = 'all';
-  state.books.forEach((book) => { const option = node('option', '', book.title); option.value = book.id; $('book-filter').append(option); });
+function noteCard(note, reasons = []) {
+  const card = element('article', 'note-card'); const top = element('div', 'note-topline'); const heading = element('div'); const meta = element('div', 'note-meta');
+  meta.append(element('span', 'note-kind', kinds[note.kind] || note.kind), element('span', '', note.target));
+  if (note.kind === 'component') meta.append(element('span', '', `${positions[note.position] || note.position} · ${note.scope === 'any-depth' ? '任意层级' : '最外层'}`));
+  heading.append(meta, element('h3', '', note.title)); const controls = element('div', 'note-controls'); controls.append(button('编辑', () => openNote(note)), button('删除', () => confirmAction('删除这条笔记？', `将删除“${note.title}”。可先在数据管理中导出备份。`, () => commit({ ...state.data, notes: state.data.notes.filter((n) => n.id !== note.id) }, '笔记已删除。'), '确认删除'))); top.append(heading, controls); card.append(top);
+  if (reasons.length) card.append(element('p', 'note-reasons', reasons.join('；')));
+  card.append(element('p', 'note-content', note.content));
+  if (note.conditions) card.append(element('p', 'note-conditions', `适用条件（需先确认）：${note.conditions}`));
+  if (note.examples?.length) card.append(element('p', 'small-note', `例字：${note.examples.join('、')}`));
+  card.append(element('p', 'note-source', `来源：${note.source || '未填写，请自行核对'}`));
+  return card;
 }
-function normalizeStructure(value) {
-  const text = plain(value);
-  if (/左中右/.test(text)) return '左中右结构';
-  if (/上中下/.test(text)) return '上中下结构';
-  if (/左右|⿰/.test(text)) return '左右结构';
-  if (/上下|⿱/.test(text)) return '上下结构';
-  if (/包围|⿴|⿵|⿶|⿷|⿸|⿹|⿺/.test(text)) return '包围结构';
-  if (/独体|单体/.test(text)) return '独体字';
-  return text;
-}
-function currentMeta() { return state.characters[state.character] || null; }
-function renderCharacterFacts() {
-  const meta = currentMeta();
-  $('current-character').textContent = state.character;
-  $('fact-count').textContent = meta?.strokesCount ?? state.strokeData?.strokes?.length ?? '未收录';
-  $('fact-radical').textContent = meta?.radical || '待核实';
-  $('fact-structure').textContent = normalizeStructure(meta?.structure) || '待核实';
-  $('fact-decomposition').textContent = meta?.decomposition || '暂无可靠拆分数据';
-  $('fact-review').textContent = meta?.reviewed ? '数据已核对' : '开源参考数据';
-  const source = meta ? plain(meta.source) : '当前本地字典未收录此字；不据此判断教材是否含有此字。';
-  $('fact-source').textContent = source ? `基础信息来源：${source}` : '基础信息来源：本地汉字数据集；详见项目数据来源说明。';
-  $('bookmark-button').textContent = state.favorites.includes(state.character) ? '★' : '☆';
-  $('bookmark-button').setAttribute('aria-pressed', String(state.favorites.includes(state.character)));
-  $('bookmark-button').setAttribute('aria-label', `${state.favorites.includes(state.character) ? '取消收藏' : '收藏'}汉字${state.character}`);
-}
-function componentSet(meta) {
-  const result = new Set();
-  if (!meta) return result;
-  const ignored = new Set(Array.from('⿰⿱⿲⿳⿴⿵⿶⿷⿸⿹⿺⿻？?'));
-  Array.from(plain(meta.decomposition)).forEach((c) => { if (/\p{Script=Han}/u.test(c) && !ignored.has(c)) result.add(c); });
-  strings(meta.components).forEach((c) => result.add(c));
-  if (meta.radical) result.add(meta.radical);
-  return result;
-}
-function matchRules() {
-  const meta = currentMeta();
-  const structure = normalizeStructure(meta?.structure);
-  const components = componentSet(meta);
-  return state.rules.filter((r) => state.bookId === 'all' || r.bookId === state.bookId).map((rule) => {
-    const direct = strings(rule.characters).includes(state.character);
-    const componentMatches = strings(rule.components).filter((c) => components.has(c));
-    const structureMatch = !!structure && strings(rule.structures).some((s) => normalizeStructure(s) === structure);
-    const score = (direct ? 100 : 0) + componentMatches.length * 15 + (structureMatch ? 5 : 0);
-    return { rule, direct, componentMatches, structureMatch, score };
-  }).filter((m) => m.score > 0).sort((a, b) => b.score - a.score || a.rule.pdfPage - b.rule.pdfPage).slice(0, 6);
-}
-function sourceButton(rule) {
-  const book = state.books.find((b) => b.id === rule.bookId);
-  const button = node('button', 'citation-button', `${book?.title || rule.bookId} · PDF 第 ${rule.pdfPage} 页${rule.printedPage ? ` / 书内 ${rule.printedPage} 页` : ''} ↗`);
-  button.type = 'button';
-  button.addEventListener('click', () => window.dispatchEvent(new CustomEvent('open-source', { detail: { bookId: rule.bookId, page: rule.pdfPage } })));
-  return button;
-}
-function renderRules() {
-  state.matches = matchRules();
-  const directCount = state.matches.filter((m) => m.direct).length;
-  const checkedDirectCount = state.matches.filter((m) => m.direct && m.rule.reviewed).length;
-  const summary = $('evidence-summary');
-  summary.className = 'evidence-summary';
-  if (!state.knowledgeReady) { summary.classList.add('gap'); summary.textContent = '教材知识库尚未成功加载。当前不生成教材教学结论。'; }
-  else if (!state.matches.length) { summary.classList.add('gap'); summary.textContent = `证据不足：当前已提取记录暂未匹配到“${state.character}”的例字、部件或结构规则。仍可查看可靠笔顺并练习；这不代表教材全书没有该字。`; }
-  else if (directCount) summary.textContent = `${checkedDirectCount ? '已核对' : '已提取'}例字记录包含“${state.character}”。下列 ${directCount} 条直接关联记录与其他迁移候选分开标明；不代表全书覆盖已检查完毕。`;
-  else { summary.classList.add('transfer'); summary.textContent = `规则迁移候选：依据“${state.character}”的部件或结构匹配到 ${state.matches.length} 条规则，适用性仍须结合本字核对。当前记录未精确匹配本字，不能据此断言教材没有该字。`; }
-  $('knowledge-count').textContent = `${state.matches.length} 条候选依据`;
-  $('rule-list').replaceChildren();
-  state.matches.forEach((match, i) => {
-    const rule = match.rule;
-    const card = node('article', 'rule-card');
-    const top = node('div', 'rule-topline');
-    top.append(node('span', 'rule-index', String(i + 1).padStart(2, '0')));
-    top.append(node('span', `badge ${match.direct ? 'direct' : 'transfer'}`, match.direct ? rule.reviewed ? '已核对例字关联' : '例字关联 · 待核对' : '部件 / 结构迁移候选'));
-    top.append(node('span', `badge ${rule.kind === 'observation' ? 'observation' : 'neutral'}`, rule.kind === 'observation' ? '范字观察 · 非原文' : '教材转述 · 非逐字引用'));
-    card.append(top, node('h3', '', rule.title || '教材教学记录'), node('p', 'rule-text', rule.text));
-    const reasons = match.direct ? `关联例字：${state.character}` : [match.componentMatches.length ? `相同部件：${match.componentMatches.join('、')}` : '', match.structureMatch ? `相同结构：${normalizeStructure(currentMeta()?.structure)}` : ''].filter(Boolean).join(' · ');
-    card.append(node('p', 'rule-condition', reasons));
-    if (plain(rule.conditions)) card.append(node('p', 'rule-condition', `适用条件：${plain(rule.conditions)}`));
-    if (plain(rule.practice)) { const practice = node('p', 'rule-practice'); practice.append(node('strong', '', '系统练习建议'), document.createTextNode(plain(rule.practice))); card.append(practice); }
-    const citation = node('div', 'source-citation'); citation.append(sourceButton(rule), node('span', '', rule.reviewed ? '页面已核对（AI）' : '待页面核对')); card.append(citation);
-    if (rule.sourceNote) card.append(node('p', 'source-note', plain(rule.sourceNote)));
-    $('rule-list').append(card);
-  });
-  if (!state.matches.length) $('rule-list').append(node('div', 'empty-state', state.knowledgeReady ? '保留未知，也是一种严谨。可切换教材，或先从笔顺与字形观察开始。' : '请检查 data/knowledge.json 是否可通过本地 HTTP 服务访问。'));
-  const firstPractice = state.matches.find((m) => plain(m.rule.practice));
-  $('practice-rule-tip').replaceChildren();
-  if (firstPractice) {
-    const tip = $('practice-rule-tip');
-    tip.append(node('strong', '', firstPractice.direct ? '例字关联 · 系统练习建议' : '候选迁移 · 请先检查适用条件'));
-    tip.append(node('p', '', firstPractice.direct ? plain(firstPractice.rule.practice) : `以下来自部件或 IDS 结构相似的候选规则，须先判断是否适用于“${state.character}”：${plain(firstPractice.rule.practice)}`));
-    tip.append(node('p', 'rule-condition', `适用条件：${plain(firstPractice.rule.conditions) || '来源未列明具体条件，暂不能确认可直接用于本字。'}`));
-    const citation = node('div', 'source-citation'); citation.append(sourceButton(firstPractice.rule)); tip.append(citation);
-  } else $('practice-rule-tip').textContent = '当前缺少与本字匹配的教材练习规则。先观察整体字形，暂不作书家风格推演。';
-}
-function renderBooks() {
-  $('books-count').textContent = `${state.books.length} 本教材`;
-  $('book-list').replaceChildren();
-  state.books.forEach((book) => {
-    const card = node('article', 'book-card');
-    const content = node('div');
-    const rules = state.rules.filter((r) => r.bookId === book.id);
-    content.append(node('h3', '', book.title), node('p', '', `${book.pageCount || '未知'} 页 · 已整理 ${rules.length} 条知识记录`));
-    if (book.sha256) content.append(node('p', 'book-hash', `SHA-256：${book.sha256}`));
-    if (book.note || book.description) content.append(node('p', '', plain(book.note || book.description)));
-    const action = node('div', 'source-citation');
-    const open = node('button', 'citation-button', '本地核对教材 ↗');
-    open.addEventListener('click', () => window.dispatchEvent(new CustomEvent('open-source', { detail: { bookId: book.id, page: rules[0]?.pdfPage || 1 } })));
-    action.append(open); content.append(action);
-    card.append(node('div', 'book-icon', '字帖'), content); $('book-list').append(card);
-  });
-  if (!state.books.length) $('book-list').append(node('div', 'empty-state', '暂无已整理的教材记录。请加载教材知识数据。'));
-}
-
-function setStrokeControls(enabled) {
-  ['play-button', 'previous-stroke', 'next-stroke', 'animation-speed', 'show-trajectory'].forEach((id) => { $(id).disabled = !enabled; });
-  $('pause-button').disabled = true;
-}
-async function loadStrokeData() {
-  const requestVersion = ++state.loadingVersion;
-  const character = state.character;
-  state.writer = null; state.strokeData = null; state.strokeIndex = -1; state.paused = false;
-  $('writer-target').replaceChildren(); $('trajectory-layer').replaceChildren(); $('trajectory-layer').hidden = true;
-  $('glyph-fallback').textContent = character; $('glyph-fallback').hidden = false;
-  $('pause-button').textContent = '暂停'; $('play-button').textContent = '播放笔顺';
-  setStrokeControls(false); status('stroke-status', '正在加载可靠笔顺数据…');
-  try {
-    const data = await fetchJson(`./data/characters/${encodeURIComponent(character)}.json`);
-    if (requestVersion !== state.loadingVersion) return;
-    if (!Array.isArray(data.strokes) || !data.strokes.length || !data.strokes.every((s) => typeof s === 'string') || !Array.isArray(data.medians) || data.medians.length !== data.strokes.length) throw new Error('字形数据不完整');
-    if (!window.HanziWriter?.create) throw new Error('笔顺动画组件未加载');
-    state.strokeData = data;
-    const size = $('character-stage').clientWidth || 315;
-    state.writer = window.HanziWriter.create('writer-target', character, { width: size, height: size, padding: 22, strokeColor: '#33382e', outlineColor: '#e4e1d6', radicalColor: '#33382e', showOutline: true, showCharacter: false, strokeAnimationSpeed: Number($('animation-speed').value), delayBetweenStrokes: 380, charDataLoader: () => data });
-    $('glyph-fallback').hidden = true;
-    setStrokeControls(true);
-    status('stroke-status', `共 ${data.strokes.length} 笔 · 点击播放或逐笔观察`);
-    renderCharacterFacts();
-  } catch (error) {
-    if (requestVersion !== state.loadingVersion) return;
-    state.strokeData = null;
-    status('stroke-status', `暂无可用笔顺动画。${error.message === '笔顺动画组件未加载' ? '动画组件未加载。' : '本地数据可能未收录此字或加载失败。'}淡字仅为系统字体参考。`, true);
-    renderCharacterFacts();
+function renderMatches() {
+  $('matched-notes').replaceChildren();
+  const matches = matchNotes(state.character, state.analysis, state.data.notes);
+  if (![...matches.exact, ...matches.applicable, ...matches.candidates].length) { const empty = element('div', 'empty-state'); empty.append(element('p', '', state.data.notes.length ? '当前没有匹配笔记。可检查拆分、修订部件，或为这个字记录第一条写法。' : '这里还没有你的笔记。先写下一条整字、部件或结构的写法，之后遇到相同对象时再翻出来。'), button('为这个字记一法 ＋', () => openNote({ kind: 'character', target: state.character }))); $('matched-notes').append(empty); return; }
+  const labels = { exact: ['本字笔记', '整字精确关联'], applicable: ['可复用笔记', '符合对象、位置与层级'], candidates: ['候选参考', '先检查适用条件与差异'] };
+  for (const key of ['exact', 'applicable', 'candidates']) {
+    if (!matches[key].length) continue;
+    const group = element('section', `match-group ${key}`); const heading = element('div', 'match-group-heading'); heading.append(element('h3', '', labels[key][0]), element('span', '', `${matches[key].length} 条 · ${labels[key][1]}`)); group.append(heading);
+    matches[key].forEach(({ note, reasons }) => group.append(noteCard(note, reasons || []))); $('matched-notes').append(group);
   }
 }
-function updateTrajectory() {
-  const layer = $('trajectory-layer'); layer.replaceChildren();
-  const median = state.strokeData?.medians?.[state.strokeIndex];
-  if (!$('show-trajectory').checked || !Array.isArray(median) || median.length < 2) { layer.hidden = true; return; }
-  const points = median.filter((p) => Array.isArray(p) && p.length >= 2 && Number.isFinite(p[0]) && Number.isFinite(p[1])).map(([x, y]) => [x, 900 - y]);
-  if (points.length < 2) { layer.hidden = true; return; }
-  const svgNS = 'http://www.w3.org/2000/svg';
-  const defs = document.createElementNS(svgNS, 'defs'); const marker = document.createElementNS(svgNS, 'marker');
-  Object.entries({ id: 'trajectory-arrow', viewBox: '0 0 10 10', refX: '8', refY: '5', markerWidth: '5', markerHeight: '5', orient: 'auto-start-reverse' }).forEach(([key, value]) => marker.setAttribute(key, value));
-  const arrow = document.createElementNS(svgNS, 'path'); arrow.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z'); arrow.setAttribute('fill', '#af4f37'); marker.append(arrow); defs.append(marker);
-  const path = document.createElementNS(svgNS, 'path');
-  Object.entries({ d: points.map(([x, y], i) => `${i ? 'L' : 'M'}${x},${y}`).join(' '), stroke: '#af4f37', 'stroke-width': '7', fill: 'none', 'stroke-dasharray': '11 8', 'marker-end': 'url(#trajectory-arrow)' }).forEach(([key, value]) => path.setAttribute(key, value));
-  const start = document.createElementNS(svgNS, 'circle'); start.setAttribute('cx', points[0][0]); start.setAttribute('cy', points[0][1]); start.setAttribute('r', '13'); start.setAttribute('fill', '#fffaf0'); start.setAttribute('stroke', '#af4f37'); start.setAttribute('stroke-width', '6');
-  const group = document.createElementNS(svgNS, 'g');
-  const padding = 22 / ($('character-stage').clientWidth || 315) * 1024;
-  group.setAttribute('transform', `translate(${padding},${padding}) scale(${(1024 - padding * 2) / 1024})`);
-  group.append(path, start); layer.append(defs, group); layer.hidden = false;
+function renderNotebook() {
+  const query = $('note-search').value.trim().toLocaleLowerCase(); const kind = $('note-kind-filter').value;
+  const notes = state.data.notes.filter((n) => (kind === 'all' || n.kind === kind) && (!query || [n.title, n.target, n.content, n.conditions, n.source, ...(n.examples || [])].join('\n').toLocaleLowerCase().includes(query)));
+  $('note-count').textContent = `${notes.length} / ${state.data.notes.length} 条笔记`; $('notebook-list').replaceChildren();
+  notes.forEach((n) => $('notebook-list').append(noteCard(n)));
+  if (!notes.length) $('notebook-list').append(element('div', 'empty-state', state.data.notes.length ? '没有符合搜索条件的笔记。试试更短的关键词或切换类型。' : '空白的一页，等你落笔。点击“新建笔记”，记录第一条自己的书写方法。'));
 }
-function animateSingle(index) {
-  if (!state.writer || !state.strokeData) return;
-  state.writer.pauseAnimation();
-  state.strokeIndex = Math.max(0, Math.min(state.strokeData.strokes.length - 1, index));
-  state.paused = false; $('pause-button').textContent = '暂停'; $('pause-button').disabled = false;
-  const names = strings(currentMeta()?.strokeNames);
-  status('stroke-status', `第 ${state.strokeIndex + 1} / ${state.strokeData.strokes.length} 笔 · ${names[state.strokeIndex] || '笔画名称未审校'}`);
-  state.writer.hideCharacter({ duration: 0 });
-  const writer = state.writer;
-  const indexAtStart = state.strokeIndex;
-  state.writer.animateStroke(state.strokeIndex, { onComplete: (result) => { if (!result?.canceled && state.writer === writer && state.strokeIndex === indexAtStart) $('pause-button').disabled = true; } });
-  updateTrajectory();
+function renderData() {
+  $('total-notes').textContent = state.data.notes.length; $('total-overrides').textContent = state.data.overrides.length; $('total-aliases').textContent = state.data.aliases.length;
+  const checked = new Set([...$('export-note-list').querySelectorAll('input:checked')].map((input) => input.value)); $('export-note-list').replaceChildren();
+  for (const note of state.data.notes) { const label = element('label'); const input = element('input'); input.type = 'checkbox'; input.value = note.id; input.checked = checked.has(note.id); label.append(input, document.createTextNode(`${note.title} · ${note.target}`)); $('export-note-list').append(label); }
+  if (!state.data.notes.length) $('export-note-list').append(element('p', 'small-note', '暂无个人笔记。'));
+  const previous = readPreviousNotebook(); $('restore-backup').disabled = !previous.data;
+  $('restore-description').textContent = previous.data ? `上一份包含 ${previous.data.notes.length} 条笔记、${previous.data.overrides.length} 个字形修订。` : previous.error || '尚无上一份备份。保存第二次改动后会出现。';
 }
-function selectCharacter(value, { record = true, navigate = false } = {}) {
-  const character = value.trim();
-  if (!validCharacter(character)) { status('search-feedback', '请输入一个汉字，不要同时输入词语、标点或空格。', true); toast('请输入一个汉字。'); return false; }
-  cancelTeaching();
-  state.character = character;
-  $('character-input').value = character;
-  status('search-feedback', `正在学习“${character}”。字形参考与教材证据分别展示。`);
-  $('teacher-response').replaceChildren(); status('teacher-status', '');
-  renderCharacterFacts(); renderRules(); loadStrokeData();
-  if (record) addRecord('learn', character);
-  if (!drawing.strokes.length) setPracticeCharacter(character);
-  if (navigate) showPage('learn');
-  return true;
+function renderAll() { renderAnalysis(); renderMatches(); renderNotebook(); renderData(); }
+function updateNoteFields() { const component = $('note-kind').value === 'component'; $('note-position').disabled = !component; $('note-scope').disabled = !component; }
+function fillPositions(select, value = 'any') { select.replaceChildren(); Object.entries(positions).forEach(([key, label]) => { const option = element('option', '', label); option.value = key; select.append(option); }); select.value = value in positions ? value : 'any'; }
+function openNote(note = {}) {
+  $('note-form').reset(); $('note-id').value = note.id || ''; $('note-dialog-title').textContent = note.id ? '编辑书法笔记' : '新建书法笔记';
+  for (const key of ['title', 'kind', 'target', 'conditions', 'content', 'source']) $(`note-${key}`).value = note[key] || (key === 'kind' ? 'character' : '');
+  $('note-position').value = note.position || 'any'; $('note-scope').value = note.scope || 'top'; $('note-examples').value = (note.examples || []).join('、'); status('note-form-status', ''); updateNoteFields(); openDialog('note-dialog'); $('note-title').focus();
 }
-
-function validateEndpoint(value) {
-  const url = new URL(value.trim());
-  const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
-  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && local)) throw new Error('请使用 HTTPS，或 http://localhost 本机接口。');
-  if (url.username || url.password || url.search || url.hash) throw new Error('接口地址不得包含账号、密码、查询参数或片段。');
-  return url.href.replace(/\/+$/, '');
-}
-function updateAIState() {
-  $('ai-state-badge').textContent = state.endpoint ? '接口已配置 · 按需调用' : '尚未连接 AI';
-  $('ai-state-badge').className = `badge ${state.endpoint ? 'direct' : 'neutral'}`;
-}
-function cancelTeaching() {
-  if (state.controller) { state.controller.abort(); state.controller = null; }
-  $('generate-teaching').disabled = false; $('generate-teaching').textContent = '生成教材教学'; $('cancel-teaching').hidden = true;
-}
-async function generateTeaching(event) {
+function saveNote(event) {
   event.preventDefault();
-  if (!state.endpoint) { status('teacher-status', '尚未配置教学接口。请在“我的”中填写你部署的服务地址。当前未调用 AI。', true); return; }
-  const question = $('teacher-question').value.trim() || '请依据给定教材规则，说明本字可以怎样练习；区分教材依据与本字推演。';
-  if (question.length > 800) { status('teacher-status', '问题请控制在 800 字符以内。', true); return; }
-  if (state.controller) return;
-  const controller = new AbortController(); state.controller = controller;
-  const character = state.character;
-  const allowed = new Map(state.matches.map((m) => [m.rule.id, m.rule]));
-  $('generate-teaching').disabled = true; $('generate-teaching').textContent = '正在生成…'; $('cancel-teaching').hidden = false;
-  status('teacher-status', `正在请求教学接口。本次仅发送“${character}”、问题和 ${allowed.size} 个规则 ID。`);
-  $('teacher-response').replaceChildren();
-  const timer = setTimeout(() => controller.abort(), 90000);
   try {
-    const headers = { 'Content-Type': 'application/json' };
-    if (state.accessCode) headers.Authorization = `Bearer ${state.accessCode}`;
-    const response = await fetch(`${state.endpoint}/teach`, { method: 'POST', mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer', headers, body: JSON.stringify({ character, question, ruleIds: [...allowed.keys()] }), signal: controller.signal });
-    if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? '接口拒绝访问，请检查接口访问码。' : `教学服务返回 HTTP ${response.status}。`);
-    const payload = await response.json();
-    if (controller.signal.aborted || state.character !== character) return;
-    if (!Array.isArray(payload.blocks) || !payload.blocks.length) throw new Error('接口未返回有效的教学内容。');
-    const blocks = payload.blocks.slice(0, 20).filter((b) => b && ['evidence', 'inference', 'gap'].includes(b.kind) && typeof b.text === 'string' && b.text.trim());
-    if (!blocks.length) throw new Error('教学内容格式不受支持，未显示未验证结果。');
-    blocks.forEach((block) => {
-      const ids = [...new Set(strings(block.ruleIds))].filter((id) => allowed.has(id));
-      const kind = block.kind === 'evidence' && !ids.length ? 'gap' : block.kind;
-      const card = node('article', `ai-block ${kind}`);
-      card.append(node('span', `badge ${kind === 'evidence' ? 'direct' : kind === 'inference' ? 'transfer' : 'neutral'}`, kind === 'evidence' ? '教材依据 · 转述或观察，请核对引用' : kind === 'inference' ? 'AI 推演 · 非教材原文' : '证据不足 / 保留未知'));
-      if (block.kind === 'evidence' && !ids.length) card.append(node('p', 'source-note', '接口未提供本次允许的有效教材引用，以下内容不作为教材证据。'));
-      card.append(node('p', '', block.text.slice(0, 6000)));
-      if (ids.length) { const citations = node('div', 'source-citation'); ids.forEach((id) => citations.append(sourceButton(allowed.get(id)))); card.append(citations); }
-      $('teacher-response').append(card);
-    });
-    status('teacher-status', '教学已生成。引用限制为本次检索规则；AI 推演仍需结合范字与教材核对。可修改问题继续追问。');
-  } catch (error) {
-    if (state.controller === controller) status('teacher-status', error.name === 'AbortError' ? '请求已取消或超时，没有生成替代结果。' : `未能生成教学：${error.message} 请检查服务地址、访问码与跨域配置。`, true);
-  } finally {
-    clearTimeout(timer);
-    if (state.controller === controller) { state.controller = null; $('generate-teaching').disabled = false; $('generate-teaching').textContent = '生成教材教学'; $('cancel-teaching').hidden = true; }
-  }
+    const previous = state.data.notes.find((n) => n.id === $('note-id').value);
+    const timestamp = new Date().toISOString();
+    const raw = { ...(previous || {}), title: $('note-title').value, kind: $('note-kind').value, target: $('note-target').value, position: $('note-position').disabled ? 'any' : $('note-position').value, scope: $('note-scope').disabled ? 'top' : $('note-scope').value, conditions: $('note-conditions').value, content: $('note-content').value, examples: $('note-examples').value.split(/[\s,，、;；]+/u).filter(Boolean), source: $('note-source').value, createdAt: previous?.createdAt || timestamp, updatedAt: timestamp };
+    const note = normalizeNote(raw); const notes = previous ? state.data.notes.map((n) => n.id === previous.id ? note : n) : [...state.data.notes, note];
+    commit({ ...state.data, notes }, '笔记已保存到本机。'); closeDialog('note-dialog');
+  } catch (error) { status('note-form-status', error.message, true); }
 }
-
-function renderRecords() {
-  $('favorite-count').textContent = `${state.favorites.length} 字`;
-  $('favorite-list').replaceChildren();
-  state.favorites.forEach((character) => { const button = node('button', 'favorite-character', character); button.title = `学习“${character}”`; button.addEventListener('click', () => selectCharacter(character, { navigate: true })); $('favorite-list').append(button); });
-  if (!state.favorites.length) $('favorite-list').append(node('div', 'empty-state', '在学字页点击 ☆，收下想继续练的字。'));
-  $('record-total').textContent = state.records.length;
-  $('record-list').replaceChildren();
-  state.records.slice(0, 40).forEach((record) => {
-    const row = node('div', 'record-row');
-    const content = node('div', 'record-content');
-    content.append(node('strong', '', record.type === 'practice' ? '保存了一次临写练习' : '学习字形与教材依据'), node('p', '', record.detail || (record.type === 'practice' ? '练习图片已导出至设备' : '每次专注一个字，慢慢积累。')));
-    const date = new Date(record.at);
-    const time = node('time', '', date.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })); time.dateTime = record.at;
-    const open = node('button', 'record-open', '重温'); open.addEventListener('click', () => selectCharacter(record.character, { navigate: true }));
-    row.append(node('span', 'record-glyph', record.character), content, time, open); $('record-list').append(row);
-  });
-  if (!state.records.length) $('record-list').append(node('div', 'empty-state', '学字与保存练习后，会在这里留下足迹。'));
+function addComponentRow(part = {}) {
+  const row = element('div', 'override-component-row'); const input = element('input'); input.value = part.name || ''; input.placeholder = '部件，例如：氵'; input.setAttribute('aria-label', '手动部件名称');
+  const select = element('select'); select.setAttribute('aria-label', '手动部件位置'); fillPositions(select, part.position || 'any'); row.append(input, select, button('×', () => row.remove(), 'remove-component')); row.lastChild.setAttribute('aria-label', '移除此部件'); $('override-components').append(row);
 }
-function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob); const link = node('a'); link.href = url; link.download = filename; document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+function openOverride() {
+  const existing = state.data.overrides.find((o) => o.character === state.character); const value = existing || state.analysis;
+  $('override-character').value = state.character; $('override-radical').value = value.radical || ''; $('override-structure').value = value.structure || ''; $('override-decomposition').value = value.decomposition || ''; $('override-components').replaceChildren();
+  (value.components || []).filter((c) => !c.depth || c.depth === 1).forEach(addComponentRow); $('reset-override').disabled = !existing; status('override-form-status', ''); openDialog('override-dialog');
 }
-function exportRecords() {
-  downloadBlob(new Blob([JSON.stringify({ application: 'moxi', version: 1, exportedAt: new Date().toISOString(), favorites: state.favorites, records: state.records }, null, 2)], { type: 'application/json' }), `墨习-学习记录-${new Date().toISOString().slice(0, 10)}.json`);
-  status('records-status', '记录已导出，不包含接口地址、访问码、教材文件或照片。');
+function saveOverride(event) {
+  event.preventDefault();
+  try {
+    const override = normalizeOverride({ character: $('override-character').value, radical: $('override-radical').value, structure: $('override-structure').value, decomposition: $('override-decomposition').value, components: [...$('override-components').children].map((row) => ({ name: row.querySelector('input').value, position: row.querySelector('select').value })).filter((c) => c.name.trim()), updatedAt: new Date().toISOString() });
+    const overrides = [...state.data.overrides.filter((o) => o.character !== override.character), override]; commit({ ...state.data, overrides }, '字形分析已保存为用户修订。'); closeDialog('override-dialog');
+  } catch (error) { status('override-form-status', error.message, true); }
 }
-async function importRecords(event) {
+function exportData(forceAll = false) {
+  try {
+    const selected = !forceAll && document.querySelector('input[name="export-scope"]:checked').value === 'selected'; const ids = new Set([...$('export-note-list').querySelectorAll('input:checked')].map((input) => input.value));
+    const notes = selected ? state.data.notes.filter((n) => ids.has(n.id)) : state.data.notes; const include = !selected || $('include-revisions').checked;
+    if (selected && !notes.length && (!include || (!state.data.overrides.length && !state.data.aliases.length))) throw new Error('请先选择要导出的笔记或修订数据。');
+    const backup = makeBackup(notes, include ? state.data.overrides : [], include ? state.data.aliases : []);
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const link = element('a'); link.href = url; link.download = `墨习-一字一法-${new Date().toISOString().slice(0, 10)}${selected ? '-所选' : ''}.json`; document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    status('export-status', `已生成包含 ${notes.length} 条笔记的备份下载。请确认设备已保存文件。`); if (forceAll) toast('内存数据备份已生成，请确认下载文件。');
+  } catch (error) { status('export-status', error.message, true); toast(error.message); }
+}
+function conflictRow(title, local, incoming, isOverride, key) {
+  const row = element('div', 'conflict-row'); row.append(element('p', '', title));
+  row.append(element('p', 'conflict-diff', isOverride ? `本地：${local.structure || '未填结构'} / ${local.decomposition || '未填拆分'}\n导入：${incoming.structure || '未填结构'} / ${incoming.decomposition || '未填拆分'}` : `本地：${local.content}\n导入：${incoming.content}`));
+  const label = element('label', '', '处理方式'); const select = element('select'); select.dataset.conflictKind = isOverride ? 'overrides' : 'notes'; select.dataset.conflictKey = key;
+  for (const [value, name] of [['local', '保留本地'], ['incoming', '采用导入'], ...(!isOverride ? [['copy', '复制为新笔记']] : [])]) { const option = element('option', '', name); option.value = value; select.append(option); }
+  label.append(select); row.append(label); return row;
+}
+async function previewImport(event) {
   const file = event.target.files?.[0]; if (!file) return;
+  state.importPlan = null; $('import-preview').hidden = true;
   try {
-    if (file.size > 1024 * 1024) throw new Error('备份文件须小于 1 MB。');
-    const data = JSON.parse(await file.text());
-    if (data.application !== 'moxi' || data.version !== 1 || !Array.isArray(data.records) || !Array.isArray(data.favorites)) throw new Error('请选择墨习导出的有效记录备份。');
-    const imported = sanitizeRecords(data.records);
-    const dedupe = new Map([...state.records, ...imported].map((r) => [`${r.character}|${r.type}|${r.at}`, r]));
-    state.records = [...dedupe.values()].sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 300);
-    state.favorites = [...new Set([...state.favorites, ...data.favorites.filter(validCharacter)])].slice(0, 1000);
-    persist(); renderRecords(); renderCharacterFacts(); status('records-status', '备份已合并；重复记录已去重。');
-  } catch (error) { status('records-status', `导入失败：${error.message}`, true); }
+    if (file.size > 10 * 1024 * 1024) throw new Error('请选择不超过 10 MB 的 JSON 备份。');
+    const backup = JSON.parse(await file.text()); const plan = planImport(backup, state.data.notes, state.data.overrides, state.data.aliases); state.importPlan = plan;
+    $('import-summary').textContent = `笔记：新增 ${plan.newNotes.length} 条，重复 ${plan.duplicates.length} 条，冲突 ${plan.conflicts.length} 条。\n字形修订：新增 ${plan.newOverrides.length} 个，重复 ${plan.overrideDuplicates?.length || 0} 个，冲突 ${plan.overrideConflicts.length} 个。\n尚未写入。确认合并后才会更新本机数据。`;
+    $('import-conflicts').replaceChildren(); plan.conflicts.forEach((c) => $('import-conflicts').append(conflictRow(`笔记冲突：${c.local.title} ↔ ${c.incoming.title}`, c.local, c.incoming, false, c.id))); plan.overrideConflicts.forEach((c) => $('import-conflicts').append(conflictRow(`字形修订冲突：${c.character}`, c.local, c.incoming, true, c.character)));
+    $('import-preview').hidden = false; status('import-status', `已读取“${file.name || '备份文件'}”，请核对预览。`);
+  } catch (error) { status('import-status', `导入预览失败：${error.message} 原有数据未改动。`, true); }
   event.target.value = '';
 }
-
-function setPracticeCharacter(character) {
-  drawing.character = character;
-  $('practice-character-input').value = character; $('practice-character-label').textContent = character;
-  renderDrawing();
-}
-function renderDrawing() {
-  const canvas = $('practice-canvas'); const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-  const width = canvas.width;
-  ctx.clearRect(0, 0, width, width); ctx.fillStyle = '#fffdf7'; ctx.fillRect(0, 0, width, width);
-  const grid = $('practice-grid').value;
-  if (grid !== 'none') {
-    ctx.save(); ctx.strokeStyle = '#d3b9a7'; ctx.lineWidth = 1.3; ctx.setLineDash([8, 7]); ctx.beginPath(); ctx.moveTo(width / 2, 0); ctx.lineTo(width / 2, width); ctx.moveTo(0, width / 2); ctx.lineTo(width, width / 2);
-    if (grid === 'mi') { ctx.moveTo(0, 0); ctx.lineTo(width, width); ctx.moveTo(width, 0); ctx.lineTo(0, width); }
-    ctx.stroke(); ctx.restore();
-  }
-  if ($('practice-guide').checked) {
-    ctx.save(); ctx.fillStyle = '#3b423017'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '540px KaiTi, STKaiti, SimSun, serif'; ctx.fillText(drawing.character, width / 2, width / 2 + 18); ctx.restore();
-  }
-  const strokes = drawing.current ? [...drawing.strokes, drawing.current] : drawing.strokes;
-  strokes.forEach((stroke) => {
-    if (!stroke.points.length) return;
-    ctx.save(); ctx.strokeStyle = '#30372d'; ctx.fillStyle = '#30372d'; ctx.lineWidth = stroke.width; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    if (stroke.points.length === 1) { ctx.beginPath(); ctx.arc(stroke.points[0][0], stroke.points[0][1], stroke.width / 2, 0, Math.PI * 2); ctx.fill(); }
-    else { ctx.beginPath(); stroke.points.forEach(([x, y], index) => { if (!index) ctx.moveTo(x, y); else ctx.lineTo(x, y); }); ctx.stroke(); }
-    ctx.restore();
-  });
-  $('undo-drawing').disabled = !drawing.strokes.length;
-  $('clear-drawing').disabled = !drawing.strokes.length && !drawing.current;
-}
-function canvasPoint(event) {
-  const rect = $('practice-canvas').getBoundingClientRect();
-  return [Math.max(0, Math.min(720, (event.clientX - rect.left) * 720 / rect.width)), Math.max(0, Math.min(720, (event.clientY - rect.top) * 720 / rect.height))];
-}
-function setupCanvas() {
-  const canvas = $('practice-canvas');
-  canvas.addEventListener('pointerdown', (event) => {
-    if (drawing.current || event.button !== 0) return;
-    event.preventDefault(); canvas.setPointerCapture(event.pointerId);
-    drawing.current = { pointerId: event.pointerId, points: [canvasPoint(event)], width: Number($('brush-width').value) }; renderDrawing();
-  });
-  canvas.addEventListener('pointermove', (event) => {
-    if (!drawing.current || drawing.current.pointerId !== event.pointerId) return;
-    event.preventDefault();
-    const events = event.getCoalescedEvents?.() || [event];
-    (events.length ? events : [event]).forEach((e) => { if (drawing.current.points.length < 20000) drawing.current.points.push(canvasPoint(e)); }); renderDrawing();
-  });
-  function finish(event) {
-    if (!drawing.current || drawing.current.pointerId !== event.pointerId) return;
-    drawing.strokes.push(drawing.current); drawing.current = null;
-    if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
-    renderDrawing(); status('practice-status', `已写 ${drawing.strokes.length} 笔触。这里记录屏幕笔触，不自动判断实际汉字笔画。`);
-  }
-  canvas.addEventListener('pointerup', finish); canvas.addEventListener('pointercancel', finish); canvas.addEventListener('lostpointercapture', finish);
-  ['practice-grid', 'practice-guide'].forEach((id) => $(id).addEventListener('change', renderDrawing));
-  $('undo-drawing').addEventListener('click', () => { drawing.strokes.pop(); renderDrawing(); status('practice-status', '已撤销最后一笔触。'); });
-  $('clear-drawing').addEventListener('click', () => { drawing.strokes = []; drawing.current = null; renderDrawing(); status('practice-status', '画板已清空。'); });
-  $('save-drawing').addEventListener('click', () => {
-    if (!drawing.strokes.length) { status('practice-status', '先在画板写下笔触，再保存这次练习。', true); return; }
-    const image = document.createElement('canvas'); image.width = 720; image.height = 780;
-    const ctx = image.getContext('2d'); ctx.fillStyle = '#fffdf7'; ctx.fillRect(0, 0, 720, 780); ctx.drawImage(canvas, 0, 0);
-    ctx.fillStyle = '#72776c'; ctx.font = '15px sans-serif'; ctx.textAlign = 'left'; ctx.fillText(`墨习 · ${drawing.character} · ${new Date().toLocaleDateString('zh-CN')}`, 18, 746); ctx.font = '12px sans-serif'; ctx.fillText('淡描为设备通用字体参考，非教材书家真迹；不含自动书法评价。', 18, 769);
-    image.toBlob((blob) => { if (!blob) { status('practice-status', '图片生成失败，请重试。', true); return; } downloadBlob(blob, `墨习-${drawing.character}-${Date.now()}.png`); addRecord('practice', drawing.character, `${drawing.strokes.length} 个屏幕笔触 · PNG 练习已导出`); status('practice-status', '练习 PNG 已导出，学习记录已保存。图片不上传服务器。'); }, 'image/png');
-  });
-  $('practice-photo').addEventListener('change', (event) => {
-    const file = event.target.files?.[0]; if (!file) return;
-    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 15 * 1024 * 1024) { status('photo-status', '请选择小于 15 MB 的 PNG、JPEG 或 WebP 图片。', true); event.target.value = ''; return; }
-    if (drawing.photoUrl) URL.revokeObjectURL(drawing.photoUrl);
-    drawing.photoUrl = URL.createObjectURL(file); $('photo-preview').src = drawing.photoUrl; $('photo-preview').hidden = false;
-    status('photo-status', '照片仅在本页预览，未上传、未评价。'); event.target.value = '';
-  });
-  renderDrawing();
-}
-
-document.querySelectorAll('.nav-item').forEach((button) => button.addEventListener('click', () => showPage(button.dataset.page)));
-document.querySelector('.brand').addEventListener('click', (event) => { event.preventDefault(); showPage('learn'); });
-$('search-form').addEventListener('submit', (event) => { event.preventDefault(); selectCharacter($('character-input').value); });
-$('bookmark-button').addEventListener('click', () => {
-  const index = state.favorites.indexOf(state.character);
-  if (index < 0) state.favorites.push(state.character); else state.favorites.splice(index, 1);
-  persist(); renderCharacterFacts(); renderRecords(); toast(index < 0 ? `已收藏“${state.character}”。` : `已取消收藏“${state.character}”。`);
-});
-$('book-filter').addEventListener('change', () => { state.bookId = $('book-filter').value; cancelTeaching(); $('teacher-response').replaceChildren(); renderRules(); });
-$('play-button').addEventListener('click', () => {
-  if (!state.writer) return;
-  state.strokeIndex = -1; state.paused = false; $('pause-button').textContent = '暂停'; $('pause-button').disabled = false; $('play-button').textContent = '重播笔顺'; $('trajectory-layer').hidden = true;
-  status('stroke-status', '依次播放笔画 · 可暂停或切换单笔观察');
-  const writer = state.writer;
-  state.writer.animateCharacter({ onComplete: (result) => { if (!result?.canceled && state.writer === writer && state.strokeIndex === -1) { $('pause-button').disabled = true; status('stroke-status', `播放完成 · 共 ${state.strokeData?.strokes.length || 0} 笔`); } } });
-});
-$('pause-button').addEventListener('click', () => { if (!state.writer) return; state.paused = !state.paused; if (state.paused) state.writer.pauseAnimation(); else state.writer.resumeAnimation(); $('pause-button').textContent = state.paused ? '继续' : '暂停'; });
-$('previous-stroke').addEventListener('click', () => animateSingle(state.strokeIndex < 0 ? 0 : state.strokeIndex - 1));
-$('next-stroke').addEventListener('click', () => animateSingle(state.strokeIndex + 1));
-$('show-trajectory').addEventListener('change', () => { if (state.strokeIndex < 0 && $('show-trajectory').checked) animateSingle(0); else updateTrajectory(); });
-$('animation-speed').addEventListener('change', () => { if (state.writer?.updateColor) loadStrokeData(); });
-$('display-grid').addEventListener('change', () => { $('character-stage').className = `character-stage grid-${$('display-grid').value}`; });
-document.querySelectorAll('.practice-current').forEach((button) => button.addEventListener('click', () => { if (drawing.character !== state.character && drawing.strokes.length) { toast('画板保留了上一次练习；保存或清空后，可在练习页换字。'); } else setPracticeCharacter(state.character); showPage('practice'); }));
-$('practice-search-form').addEventListener('submit', (event) => { event.preventDefault(); const character = $('practice-character-input').value.trim(); if (!validCharacter(character)) { status('practice-status', '请输入一个汉字。', true); return; } if (drawing.strokes.length && drawing.character !== character) { status('practice-status', '画板中还有练习笔触，请先保存或清空，再换字。', true); $('practice-character-input').value = drawing.character; return; } setPracticeCharacter(character); selectCharacter(character); status('practice-status', `开始练习“${character}”。`); });
-$('back-to-learning').addEventListener('click', () => { selectCharacter(drawing.character, { navigate: true }); });
-$('teacher-form').addEventListener('submit', generateTeaching);
-$('cancel-teaching').addEventListener('click', () => { cancelTeaching(); status('teacher-status', '已取消请求。'); });
-$('open-ai-settings').addEventListener('click', () => showPage('mine', true));
-$('settings-form').addEventListener('submit', (event) => {
-  event.preventDefault();
+function confirmImport() {
+  if (!state.importPlan) return;
   try {
-    const endpoint = validateEndpoint($('api-endpoint').value);
-    const accessCode = $('api-access-code').value.trim();
-    if (accessCode.length > 2048 || /[\r\n]/.test(accessCode)) throw new Error('访问码格式无效。');
-    cancelTeaching(); state.endpoint = endpoint; state.accessCode = accessCode;
-    try { localStorage.setItem(ENDPOINT_KEY, endpoint); } catch { /* Endpoint can work for current session without storage. */ }
-    $('api-endpoint').value = endpoint; updateAIState(); status('settings-status', '接口设置已保存，尚未发起请求。访问码仅在本页会话中保留。');
-  } catch (error) { status('settings-status', error.message || '请输入有效的服务地址。', true); }
-});
-$('disable-ai').addEventListener('click', () => { cancelTeaching(); state.endpoint = ''; state.accessCode = ''; $('api-endpoint').value = ''; $('api-access-code').value = ''; try { localStorage.removeItem(ENDPOINT_KEY); } catch {} updateAIState(); status('settings-status', 'AI 已关闭。'); });
-$('export-records').addEventListener('click', exportRecords); $('import-records').addEventListener('change', importRecords);
-window.addEventListener('beforeunload', () => { state.controller?.abort(); if (drawing.photoUrl) URL.revokeObjectURL(drawing.photoUrl); });
+    const choices = { notes: Object.create(null), overrides: Object.create(null) }; document.querySelectorAll('#import-conflicts select').forEach((select) => { choices[select.dataset.conflictKind][select.dataset.conflictKey] = select.value; });
+    const next = applyImport(state.importPlan, choices); const saved = commit(next, '备份已合并保存。'); status('import-status', saved ? '导入完成，已合并保存到本机。' : '已合并到当前内存，但存储失败。请立即导出备份。', !saved);
+  } catch (error) { status('import-status', `合并失败：${error.message} 原有数据未改动。`, true); }
+}
+function setStrokeControls(enabled) { ['play-button', 'replay-button', 'previous-stroke', 'next-stroke', 'show-trajectory', 'animation-speed'].forEach((id) => { $(id).disabled = !enabled; }); $('pause-button').disabled = true; }
+async function fetchJSON(url) { const response = await fetch(url, { credentials: 'omit' }); if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json(); }
+async function loadStrokeData() {
+  const version = ++state.loadVersion; const character = state.character;
+  state.svgObserver?.disconnect(); state.svgObserver = null;
+  state.writer?.pauseAnimation(); state.writer = null; state.strokeData = null; state.strokeIndex = -1; state.paused = false;
+  $('writer-target').replaceChildren(); $('trajectory-layer').replaceChildren(); $('trajectory-layer').hidden = true; $('glyph-fallback').hidden = false; $('glyph-fallback').textContent = character; $('pause-button').textContent = '暂停'; $('stroke-position').textContent = '逐笔观察'; setStrokeControls(false); status('stroke-status', '正在加载笔顺数据…');
+  try {
+    const data = await fetchJSON(`./data/characters/${encodeURIComponent(character)}.json`); if (version !== state.loadVersion) return;
+    if (!Array.isArray(data.strokes) || !data.strokes.length || !data.strokes.every((s) => typeof s === 'string') || !Array.isArray(data.medians) || data.medians.length !== data.strokes.length) throw new Error('数据不完整');
+    if (!window.HanziWriter?.create) throw new Error('动画组件未加载');
+    state.strokeData = data; const size = $('character-stage').clientWidth || 400;
+    const container = $('writer-target');
+    const observer = new MutationObserver(() => {
+      if (version !== state.loadVersion) { observer.disconnect(); return; }
+      const svg = container.querySelector('svg');
+      if (svg) { svg.setAttribute('viewBox', `0 0 ${size} ${size}`); svg.setAttribute('preserveAspectRatio', 'xMidYMid meet'); observer.disconnect(); state.svgObserver = null; }
+    });
+    observer.observe(container, { childList: true, subtree: true }); state.svgObserver = observer;
+    state.writer = window.HanziWriter.create('writer-target', character, { width: size, height: size, padding: 27, strokeColor: '#252821', outlineColor: '#ddd6c6', showCharacter: false, showOutline: true, strokeAnimationSpeed: Number($('animation-speed').value), delayBetweenStrokes: 380, charDataLoader: () => data });
+    $('glyph-fallback').hidden = true; setStrokeControls(true); status('stroke-status', `共 ${data.strokes.length} 笔 · 播放或逐笔观察`); renderAnalysis();
+  } catch (error) { if (version !== state.loadVersion) return; state.svgObserver?.disconnect(); state.svgObserver = null; status('stroke-status', `暂无可用轨迹：本地未收录或加载失败。淡字仅为设备字体参考，不补造笔顺。${error.message === '动画组件未加载' ? '动画组件未加载。' : ''}`, true); renderAnalysis(); }
+}
+function playAll() {
+  if (!state.writer) return; const writer = state.writer; state.strokeIndex = -1; state.paused = false; $('pause-button').textContent = '暂停'; $('pause-button').disabled = false; $('trajectory-layer').hidden = true; $('stroke-position').textContent = '整字播放'; status('stroke-status', '按数据顺序播放，可暂停或逐笔观察。');
+  writer.animateCharacter({ onComplete: (result) => { if (!result?.canceled && state.writer === writer && state.strokeIndex === -1) { $('pause-button').disabled = true; status('stroke-status', `播放完成 · 共 ${state.strokeData.strokes.length} 笔`); } } });
+}
+function playSingle(index) {
+  if (!state.writer || !state.strokeData) return; const writer = state.writer; writer.pauseAnimation(); const current = Math.max(0, Math.min(state.strokeData.strokes.length - 1, index)); state.strokeIndex = current; state.paused = false; $('pause-button').textContent = '暂停'; $('pause-button').disabled = false; $('stroke-position').textContent = `第 ${current + 1} / ${state.strokeData.strokes.length} 笔`; status('stroke-status', `第 ${current + 1} 笔 · 笔画名称未审校`); writer.hideCharacter({ duration: 0 }); writer.animateStroke(current, { onComplete: (result) => { if (!result?.canceled && state.writer === writer && state.strokeIndex === current) $('pause-button').disabled = true; } }); updateTrajectory();
+}
+function updateTrajectory() {
+  const layer = $('trajectory-layer'); layer.replaceChildren(); const points = state.strokeData?.medians?.[state.strokeIndex];
+  if (!$('show-trajectory').checked || !Array.isArray(points) || points.length < 2) { layer.hidden = true; return; }
+  const filtered = points.filter((p) => Array.isArray(p) && Number.isFinite(p[0]) && Number.isFinite(p[1])); if (filtered.length < 2) { layer.hidden = true; return; }
+  const ns = 'http://www.w3.org/2000/svg'; const svg = (tag, attrs) => { const el = document.createElementNS(ns, tag); Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v)); return el; };
+  const defs = svg('defs', {}); const marker = svg('marker', { id: 'stroke-arrow', viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 5, markerHeight: 5, orient: 'auto' }); marker.append(svg('path', { d: 'M0 0L10 5L0 10z', fill: '#9E3C30' })); defs.append(marker);
+  const padding = 27 / ($('character-stage').clientWidth || 400) * 1024; const group = svg('g', { transform: `translate(${padding},${padding}) scale(${(1024 - 2 * padding) / 1024})` });
+  group.append(svg('path', { d: filtered.map(([x, y], i) => `${i ? 'L' : 'M'}${x},${900 - y}`).join(' '), stroke: '#9E3C30', 'stroke-width': 6, fill: 'none', 'stroke-dasharray': '10 7', 'marker-end': 'url(#stroke-arrow)' }), svg('circle', { cx: filtered[0][0], cy: 900 - filtered[0][1], r: 12, fill: '#faf7ef', stroke: '#9E3C30', 'stroke-width': 5 })); layer.append(defs, group); layer.hidden = false;
+}
+function lookup(value) { const character = value.trim(); if (!validCharacter(character)) { status('lookup-status', '请输入一个汉字。', true); return; } state.character = character; $('character-input').value = character; status('lookup-status', state.metadata[character] ? '字形与拆分来自数据库参考；个人笔记按原文呈现。' : '数据库暂未提供该字信息，仍可手动修订、记录笔记；不补造轨迹或拆分。'); state.strokeData = null; renderAnalysis(); renderMatches(); loadStrokeData(); }
 
-loadLocalData(); setupCanvas(); renderRecords(); updateAIState();
-selectCharacter('永', { record: false }); loadKnowledge();
-const initialPage = location.hash.slice(1); if (['learn', 'practice', 'mine'].includes(initialPage)) showPage(initialPage);
+document.querySelectorAll('.nav-button').forEach((el) => el.addEventListener('click', () => showPage(el.dataset.page)));
+document.querySelector('.brand').addEventListener('click', (event) => { event.preventDefault(); showPage('lookup'); });
+document.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', () => closeDialog(el.dataset.close)));
+$('lookup-form').addEventListener('submit', (event) => { event.preventDefault(); lookup($('character-input').value); });
+$('new-note').addEventListener('click', () => openNote()); $('add-character-note').addEventListener('click', () => openNote({ kind: 'character', target: state.character })); $('add-structure-note').addEventListener('click', () => openNote({ kind: 'structure', target: state.analysis.structure })); $('open-notebook').addEventListener('click', () => showPage('notebook'));
+$('note-form').addEventListener('submit', saveNote); $('note-kind').addEventListener('change', updateNoteFields); $('note-search').addEventListener('input', renderNotebook); $('note-kind-filter').addEventListener('change', renderNotebook);
+$('edit-character').addEventListener('click', openOverride); $('override-form').addEventListener('submit', saveOverride); $('add-override-component').addEventListener('click', () => addComponentRow());
+$('reset-override').addEventListener('click', () => { const character = $('override-character').value; confirmAction('恢复数据库分析？', `将移除“${character}”的个人修订，笔记保留。`, () => { commit({ ...state.data, overrides: state.data.overrides.filter((o) => o.character !== character) }, '已恢复数据库分析。'); closeDialog('override-dialog'); }, '确认恢复'); });
+$('confirm-no').addEventListener('click', () => { state.confirmAction = null; closeDialog('confirm-dialog'); }); $('confirm-yes').addEventListener('click', () => { const action = state.confirmAction; state.confirmAction = null; closeDialog('confirm-dialog'); action?.(); }); $('confirm-dialog').addEventListener('cancel', () => { state.confirmAction = null; });
+$('export-backup').addEventListener('click', () => exportData()); $('emergency-export').addEventListener('click', () => exportData(true)); document.querySelectorAll('input[name="export-scope"]').forEach((el) => el.addEventListener('change', () => { $('export-selection').hidden = document.querySelector('input[name="export-scope"]:checked').value !== 'selected'; }));
+$('import-file').addEventListener('change', previewImport); $('confirm-import').addEventListener('click', confirmImport); $('cancel-import').addEventListener('click', () => { state.importPlan = null; $('import-preview').hidden = true; status('import-status', '导入已取消，未改动数据。'); });
+$('restore-backup').addEventListener('click', () => { const previous = readPreviousNotebook(); if (!previous.data) return; confirmAction('恢复上一份数据？', `将用上一份的 ${previous.data.notes.length} 条笔记和 ${previous.data.overrides.length} 个修订替换当前数据。建议先导出当前备份。`, () => { try { const data = previous.data; const validated = applyImport(planImport(makeBackup(data.notes, data.overrides, data.aliases), [], [], [])); commit(validated, '已恢复上一份数据。'); } catch (error) { toast(`恢复失败，当前数据未改动：${error.message}`); } }, '确认恢复'); });
+$('play-button').addEventListener('click', playAll); $('replay-button').addEventListener('click', playAll); $('pause-button').addEventListener('click', () => { if (!state.writer) return; state.paused = !state.paused; if (state.paused) state.writer.pauseAnimation(); else state.writer.resumeAnimation(); $('pause-button').textContent = state.paused ? '继续' : '暂停'; }); $('previous-stroke').addEventListener('click', () => playSingle(state.strokeIndex < 0 ? 0 : state.strokeIndex - 1)); $('next-stroke').addEventListener('click', () => playSingle(state.strokeIndex + 1)); $('show-trajectory').addEventListener('change', () => { if ($('show-trajectory').checked && state.strokeIndex < 0) playSingle(0); else updateTrajectory(); }); $('display-grid').addEventListener('change', () => { $('character-stage').className = `character-stage grid-${$('display-grid').value}`; }); $('animation-speed').addEventListener('change', loadStrokeData);
+window.addEventListener('beforeunload', (event) => { state.writer?.pauseAnimation(); if (state.unsaved) { event.preventDefault(); event.returnValue = ''; } });
+fillPositions($('note-position'));
+const loaded = readNotebook();
+try { const backup = makeBackup(loaded.data.notes, loaded.data.overrides, loaded.data.aliases); state.data = applyImport(planImport(backup, [], [], [])); } catch (error) { showStorageFailure(`本机数据校验失败：${error.message} 原存储保留。`); }
+if (loaded.error) showStorageFailure(loaded.error);
+renderAll(); lookup('永');
+fetchJSON('./data/characters.json').then((data) => { if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('字典格式无效'); state.metadata = data; renderAnalysis(); renderMatches(); status('lookup-status', state.metadata[state.character] ? '字形与拆分来自数据库参考；个人笔记按原文呈现。' : '数据库未收录，仍可手动修订并记录笔记。'); }).catch(() => status('lookup-status', '字典暂未加载。可手动修订和记录；请通过 HTTP 服务打开网页。', true));
+const initialPage = location.hash.slice(1); if (['lookup', 'notebook', 'data'].includes(initialPage)) showPage(initialPage);
