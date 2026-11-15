@@ -97,7 +97,7 @@ test('source manifest identifies the snapshot and independent dictionary/graphic
   assert.ok(font.length > 1000);
 });
 
-test('active entry points have no legacy PDF/AI payloads or remote static/CDN imports', async () => {
+test('active entry points have no legacy PDF payloads or remote static/CDN imports', async () => {
   const version = await versionPromise;
   const html = await readFile(path.join(root, 'index.html'), 'utf8');
   const css = await readFile(path.join(root, 'styles.css'), 'utf8');
@@ -110,7 +110,7 @@ test('active entry points have no legacy PDF/AI payloads or remote static/CDN im
     await access(asset.absolute);
     if (['/app.js', '/styles.css'].includes(asset.url.pathname)) assert.equal(asset.url.searchParams.get('v'), version, reference);
   }
-  const activeNames = ['index.html', 'styles.css', 'app.js', 'model.js'];
+  const activeNames = ['index.html', 'styles.css', 'app.js', 'model.js', 'ai.js'];
   if (await exists('store.js')) activeNames.push('store.js');
   for (const name of activeNames) {
     const contents = await readFile(path.join(root, name), 'utf8');
@@ -120,27 +120,44 @@ test('active entry points have no legacy PDF/AI payloads or remote static/CDN im
       for (const match of contents.matchAll(/\bfrom\s*["'](\.\.?\/[^"']+)["']/g)) {
         const asset = localAsset(match[1], name);
         await access(asset.absolute);
-        if (name === 'app.js' && ['/model.js', '/store.js'].includes(asset.url.pathname)) assert.equal(asset.url.searchParams.get('v'), version, match[1]);
+        if (name === 'app.js' && ['/model.js', '/store.js', '/ai.js'].includes(asset.url.pathname)) assert.equal(asset.url.searchParams.get('v'), version, match[1]);
       }
     }
   }
 });
 
-test('stroke retrieval has its own name control and preserves the single create-note entry', async () => {
+test('automatic whole-character stroke retrieval is independent of single-stroke navigation', async () => {
   const html = await readFile(path.join(root, 'index.html'), 'utf8');
   const app = await readFile(path.join(root, 'app.js'), 'utf8');
-  for (const id of ['stroke-name-input', 'stroke-name-source', 'stroke-matched-notes']) {
+  for (const id of ['stroke-name-input', 'stroke-types-list', 'stroke-types-status', 'stroke-matched-notes']) {
     assert.equal([...html.matchAll(new RegExp(`\\bid=["']${id}["']`, 'g'))].length, 1, id);
   }
   for (const id of ['note-kind', 'note-kind-filter']) {
     const select = html.match(new RegExp(`<select\\b[^>]*\\bid=["']${id}["'][^>]*>([\\s\\S]*?)<\\/select>`, 'i'))?.[1];
     assert.match(select || '', /<option\b[^>]*\bvalue=["']stroke["']/i, id);
   }
-  assert.match(app, /matchStrokeNotes/);
+  assert.match(html, /<input\b[^>]*\bid=["']stroke-name-input["'][^>]*\btype=["']hidden["']/i);
+  assert.match(app, /matchCharacterStrokeNotes/);
+  assert.match(app, /matchRadicalNotes/);
+  assert.match(app, /\.\/data\/stroke-types\.json/);
   assert.match(app, /\.\/data\/stroke-names\.json/);
   assert.equal([...html.matchAll(/<button\b[^>]*\bid=["']new-note["'][^>]*>/gi)].length, 1);
   await access(path.join(root, 'data/stroke-names.json'));
+  await access(path.join(root, 'data/stroke-types.json'));
   await access(path.join(root, 'licenses/Cnchar-MIT.txt'));
+});
+
+test('optional AI settings provide editable endpoint model and session-only credentials', async () => {
+  const html = await readFile(path.join(root, 'index.html'), 'utf8');
+  const app = await readFile(path.join(root, 'app.js'), 'utf8');
+  const ai = await readFile(path.join(root, 'ai.js'), 'utf8');
+  for (const id of ['ai-settings-button', 'ai-settings-dialog', 'ai-settings-form', 'ai-endpoint', 'ai-model', 'ai-api-key', 'ai-auto', 'ai-disconnect', 'ai-structure-status']) {
+    assert.equal([...html.matchAll(new RegExp(`\\bid=["']${id}["']`, 'g'))].length, 1, id);
+  }
+  assert.match(html, /<input\b[^>]*\bid=["']ai-api-key["'][^>]*\btype=["']password["']/i);
+  assert.match(app, /\bfrom\s*["']\.\/ai\.js\?v=/);
+  assert.doesNotMatch(ai, /\b(?:localStorage|sessionStorage)\s*\./);
+  assert.doesNotMatch(html, /部件|构件/);
 });
 
 test('knowledge library is the sole new-note entry and offers collapsed first-use and component help', async () => {
@@ -175,12 +192,12 @@ async function withBuildFixture(action) {
   try {
     for (const directory of ['tools', 'data/characters', 'vendor/fonts', 'licenses', 'worker']) await mkdir(path.join(fixture, directory), { recursive: true });
     await copyFile(path.join(root, 'tools/build-static.mjs'), path.join(fixture, 'tools/build-static.mjs'));
-    for (const name of ['index.html', 'styles.css', 'app.js', 'model.js']) await writeFile(path.join(fixture, name), name === 'index.html' ? '<!doctype html><html></html>' : '');
-    for (const name of ['data/characters.json', 'data/source-manifest.json', 'data/stroke-names.json', 'data/characters/一.json']) await writeFile(path.join(fixture, name), '{}');
+    for (const name of ['index.html', 'styles.css', 'app.js', 'model.js', 'ai.js']) await writeFile(path.join(fixture, name), name === 'index.html' ? '<!doctype html><html></html>' : '');
+    for (const name of ['data/characters.json', 'data/source-manifest.json', 'data/stroke-names.json', 'data/stroke-types.json', 'data/characters/一.json']) await writeFile(path.join(fixture, name), '{}');
     await writeFile(path.join(fixture, 'vendor/hanzi-writer.min.js'), '/* fixture */');
     await writeFile(path.join(fixture, 'vendor/fonts/moxi-book-serif.woff2'), 'wOF2fixture');
     await writeFile(path.join(fixture, 'licenses/LICENSE'), 'Fixture only.');
-    for (const name of ['data/knowledge.json', 'data/books.json', 'data/atlas-rules.json', 'data/strokes-rules.json', 'data/structure-rules.json', 'data/stroke-names-private.json', 'pdf-local.js', 'vendor/pdf.mjs', 'vendor/pdf.worker.mjs', 'worker/index.js']) await writeFile(path.join(fixture, name), 'LEGACY_NOT_PUBLIC');
+    for (const name of ['data/knowledge.json', 'data/books.json', 'data/atlas-rules.json', 'data/strokes-rules.json', 'data/structure-rules.json', 'data/stroke-names-private.json', 'data/stroke-types-private.json', 'data/ai-settings.json', 'pdf-local.js', 'vendor/pdf.mjs', 'vendor/pdf.worker.mjs', 'worker/index.js']) await writeFile(path.join(fixture, name), 'LEGACY_NOT_PUBLIC');
     await action(fixture, () => spawnSync(process.execPath, ['tools/build-static.mjs'], { cwd: fixture, encoding: 'utf8' }));
   } finally {
     const canonicalParent = await realpath(fixtureParent);
@@ -200,15 +217,19 @@ test('repeated builds remove stale output, preserve source files and exclude leg
     await writeFile(path.join(fixture, 'store.js'), 'export const store = {};');
     result = build();
     assert.equal(result.status, 0, result.stderr);
-    assert.deepEqual((await readdir(path.join(fixture, 'dist'))).sort(), ['.nojekyll', 'app.js', 'data', 'index.html', 'licenses', 'model.js', 'store.js', 'styles.css', 'vendor']);
-    assert.deepEqual((await readdir(path.join(fixture, 'dist/data'))).sort(), ['characters', 'characters.json', 'source-manifest.json', 'stroke-names.json']);
+    assert.deepEqual((await readdir(path.join(fixture, 'dist'))).sort(), ['.nojekyll', 'ai.js', 'app.js', 'data', 'index.html', 'licenses', 'model.js', 'store.js', 'styles.css', 'vendor']);
+    assert.deepEqual((await readdir(path.join(fixture, 'dist/data'))).sort(), ['characters', 'characters.json', 'source-manifest.json', 'stroke-names.json', 'stroke-types.json']);
     assert.deepEqual((await readdir(path.join(fixture, 'dist/vendor'))).sort(), ['fonts', 'hanzi-writer.min.js']);
     assert.deepEqual(await readdir(path.join(fixture, 'dist/vendor/fonts')), ['moxi-book-serif.woff2']);
     await assert.rejects(access(path.join(fixture, 'dist/stale.txt')));
     await assert.rejects(access(path.join(fixture, 'dist/private-textbook.pdf')));
     await assert.rejects(access(path.join(fixture, 'dist/.env')));
     await assert.rejects(access(path.join(fixture, 'dist/data/stroke-names-private.json')));
+    await assert.rejects(access(path.join(fixture, 'dist/data/stroke-types-private.json')));
+    await assert.rejects(access(path.join(fixture, 'dist/data/ai-settings.json')));
     assert.equal(await readFile(path.join(fixture, 'dist/data/stroke-names.json'), 'utf8'), '{}');
+    assert.equal(await readFile(path.join(fixture, 'dist/data/stroke-types.json'), 'utf8'), '{}');
+    await access(path.join(fixture, 'dist/ai.js'));
     await access(path.join(fixture, 'data/knowledge.json'));
     await access(path.join(fixture, 'worker/index.js'));
   });
@@ -227,5 +248,26 @@ test('contaminated character assets fail before replacing a successful build', a
     result = build();
     assert.notEqual(result.status, 0);
     assert.equal(await readFile(path.join(fixture, 'dist/data/characters/一.json'), 'utf8'), '{}');
+  });
+});
+
+test('AI module and stroke-type data are required and validated before replacing a release', async () => {
+  await withBuildFixture(async (fixture, build) => {
+    assert.equal(build().status, 0);
+    for (const [relative, original] of [['ai.js', ''], ['data/stroke-types.json', '{}']]) {
+      await rm(path.join(fixture, relative));
+      const missing = build();
+      assert.notEqual(missing.status, 0, `${relative} must be required`);
+      await access(path.join(fixture, 'dist/index.html'));
+      await writeFile(path.join(fixture, relative), original);
+    }
+    await writeFile(path.join(fixture, 'data/stroke-types.json'), '{ invalid JSON');
+    assert.notEqual(build().status, 0);
+    assert.equal(await readFile(path.join(fixture, 'dist/data/stroke-types.json'), 'utf8'), '{}');
+    await writeFile(path.join(fixture, 'data/stroke-types.json'), '{}');
+    const fakeCredential = 'sk-' + 'TEST_NOT_A_REAL_CREDENTIAL'.repeat(3);
+    await writeFile(path.join(fixture, 'ai.js'), `const unsafe = '${fakeCredential}';`);
+    assert.notEqual(build().status, 0);
+    assert.equal(await readFile(path.join(fixture, 'dist/ai.js'), 'utf8'), '');
   });
 });

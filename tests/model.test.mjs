@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
   normalizeNote, normalizeOverride, analyzeCharacter, matchNotes, matchStrokeNotes,
+  matchCharacterStrokeNotes, matchRadicalNotes,
   makeBackup, planImport, applyImport,
 } from '../model.js';
 
@@ -79,7 +80,7 @@ test('component position is relative to its parent and top scope excludes nested
   assert.deepEqual(resultIds(result, 'applicable'), ['nested-left', 'nested-right', 'top-top']);
   assert.deepEqual(resultIds(result, 'candidates'), []);
   const nested = result.applicable.find(item => item.note.id === 'nested-left');
-  assert.ok(nested.reasons.some(reason => /父部件/.test(reason)), 'Nested matches must not imply a whole-character left position');
+  assert.ok(nested.reasons.some(reason => /父偏旁/.test(reason)), 'Nested matches must not imply a whole-character left position');
 });
 
 test('additional conditions and uncertain analysis produce candidates rather than automatic applicability', () => {
@@ -235,7 +236,7 @@ test('reserved aliases survive backups and conflicts but never change component 
   assert.deepEqual(imported.aliases, localAliases);
   const water = note('independent-water', { kind: 'component', target: '水' });
   assert.deepEqual(allIds(matchNotes('河', analyzeCharacter('河', fixture), [water])), []);
-  assert.throws(() => note('unrecognized-alias', { kind: 'component', target: '小水旁' }), /部件/);
+  assert.throws(() => note('unrecognized-alias', { kind: 'component', target: '小水旁' }), /偏旁/);
   const conflict = planImport(makeBackup([], [], [{ alias: '水', target: '冫' }]), [], [], localAliases);
   assert.equal(conflict.aliasConflicts.length, 1);
   assert.deepEqual(applyImport(conflict).aliases, localAliases);
@@ -432,4 +433,135 @@ test('v3 backs up stroke notes while v1 and v2 notebooks remain importable', () 
   delete v1Note.category;
   const v1Backup = { ...makeBackup([], []), schemaVersion: 1, notes: [v1Note] };
   assert.equal(applyImport(planImport(v1Backup, [], [])).notes[0].category, '');
+});
+
+test('whole-character stroke references include long and short targets even in a generic category', () => {
+  const records = [
+    note('character-long-horizontal', { kind: 'stroke', target: '长横', category: '基本笔画' }),
+    note('character-short-horizontal', { kind: 'stroke', target: '短横', category: '基本笔画' }),
+    note('character-hook', { kind: 'stroke', target: '竖钩' }),
+    note('character-category-turn', { kind: 'structure', target: '左右结构', category: '折画练习' }),
+    note('character-category-dot', { kind: 'component', target: '氵', category: '点的呼应' }),
+    note('character-unrelated-vertical', { kind: 'stroke', target: '悬针竖', category: '基本笔画' }),
+    note('character-title-only', { title: '横折钩', category: '无关分类', content: '正文也有横折钩。' }),
+    note('character-whole-target-only', { kind: 'character', target: '横', category: '' }),
+  ];
+  const result = matchCharacterStrokeNotes(['点', '横折钩', '撇', '横折钩'], records);
+  assert.deepEqual(result.map(row => row.note.id), records.slice(0, 5).map(row => row.id));
+  assert.deepEqual(result[0].matchedKeywords, ['横']);
+  assert.deepEqual(result[2].matchedKeywords, ['钩']);
+  assert.ok(result.every(row => row.reasons.some(reason => /不按动画轨迹推断长短/.test(reason))));
+  // The older single-stroke API keeps its original exact-target semantics.
+  assert.deepEqual(matchStrokeNotes('横', records.slice(0, 2)), []);
+});
+
+test('whole-character stroke categories span every note purpose and all eight basic keywords', () => {
+  const records = [
+    note('all-types-horizontal', { kind: 'character', category: '横画练习' }),
+    note('all-types-vertical', { kind: 'component', target: '木', category: '竖画练习' }),
+    note('all-types-left', { kind: 'structure', target: '左右结构', category: '撇画练习' }),
+    note('all-types-right', { kind: 'stroke', target: '捺', category: '捺画练习' }),
+    note('all-types-dot', { category: '点画练习' }),
+    note('all-types-lift', { category: '提画练习' }),
+    note('all-types-turn', { category: '折画练习' }),
+    note('all-types-hook', { category: '钩画练习' }),
+  ];
+  const result = matchCharacterStrokeNotes(['横折钩', '竖提', '撇', '捺', '点'], records);
+  assert.deepEqual(result.map(row => row.note.id), records.map(row => row.id));
+  assert.ok(result.every(row => row.reasons.some(reason => /相关候选/.test(reason))));
+});
+
+test('whole-character stroke retrieval deduplicates identity without truncating or rewriting notes', () => {
+  const content = '  长横和短横的原始观察\r\n\n请保留空白。\t  ';
+  const records = Array.from({ length: 40 }, (_, index) => note(`all-strokes-many-${index}`, { kind: 'stroke', target: '长横', category: '横竖对照', content }));
+  const before = JSON.stringify(records);
+  const result = matchCharacterStrokeNotes(['横', '横折', '竖'], [...records, records[0], records[0]]);
+  assert.equal(result.length, 40);
+  assert.ok(result.every(row => row.note.content === content));
+  assert.deepEqual(result[0].matchedKeywords, ['横', '竖']);
+  assert.equal(JSON.stringify(records), before);
+});
+
+test('missing stroke inventories do not guess types while explicit custom names retain exact matching', () => {
+  const record = note('inventory-custom', { kind: 'stroke', target: '挑', category: '自定义笔画' });
+  for (const types of [[], null, undefined]) assert.deepEqual(matchCharacterStrokeNotes(types, [record]), []);
+  assert.deepEqual(matchCharacterStrokeNotes(['挑'], [record]).map(row => row.note.id), ['inventory-custom']);
+  assert.deepEqual(matchCharacterStrokeNotes(['挑'], [note('lift-not-inferred', { kind: 'stroke', target: '提' })]), []);
+  for (const types of ['横', ['横|横钩'], ['点2'], Array(101).fill('横')]) assert.throws(() => matchCharacterStrokeNotes(types, []), /笔画/);
+});
+
+test('radical references include every known location and depth while keeping original restrictions visible', () => {
+  const analysis = {
+    radical: '木', uncertain: true,
+    components: [{ name: '氵', position: 'right', depth: 3 }, { name: '氵', position: 'left', depth: 1 }],
+  };
+  const records = [
+    note('radical-anywhere', { kind: 'component', target: '三点水', position: 'outside', scope: 'top', conditions: '仅在包围位置时使用。' }),
+    note('radical-dictionary', { kind: 'component', target: '木', position: 'bottom', scope: 'top' }),
+  ];
+  const result = matchRadicalNotes(analysis, records);
+  assert.deepEqual(result.map(row => row.note.id), records.map(row => row.id));
+  assert.ok(result[0].reasons.some(reason => /未按位置或层级筛除/.test(reason)));
+  assert.ok(result[0].reasons.some(reason => /外部/.test(reason)));
+  assert.ok(result[0].reasons.some(reason => /内层偏旁/.test(reason)));
+  assert.ok(result[1].reasons.some(reason => /字典部首/.test(reason)));
+  assert.ok(result.every(row => row.reasons.some(reason => /不确定/.test(reason))));
+  assert.equal(result[0].note.conditions, records[0].conditions);
+});
+
+test('radical categories match actual glyphs and fixed names across note purposes without merging variants', () => {
+  const analysis = { radical: '氵', components: [{ name: '扌', position: 'left', depth: 1 }] };
+  const records = [
+    note('radical-category-glyph', { kind: 'character', category: '氵的练习' }),
+    note('radical-category-name', { kind: 'structure', target: '左右结构', category: '三点水观察' }),
+    note('radical-category-hand', { kind: 'stroke', target: '横', category: '提手旁观察' }),
+    note('radical-target-water-side', { kind: 'component', target: '氵' }),
+    note('radical-target-hand-side', { kind: 'component', target: '扌' }),
+    note('radical-water-not-inferred', { kind: 'component', target: '水' }),
+    note('radical-hand-not-inferred', { kind: 'component', target: '手' }),
+    note('radical-water-category-not-inferred', { category: '水的练习' }),
+    note('radical-body-only', { category: '基础练习', content: '三点水和提手旁只在正文。' }),
+  ];
+  const result = matchRadicalNotes(analysis, records);
+  assert.deepEqual(result.map(row => row.note.id), records.slice(0, 5).map(row => row.id));
+  assert.deepEqual(result[1].matchedKeywords, ['三点水']);
+  assert.ok(result.every(row => row.reasons.some(reason => /相关候选/.test(reason))));
+});
+
+test('radical retrieval ignores unknown descriptions and deduplicates known references without truncation', () => {
+  const content = '  三点水偏旁笔记\r\n保持原样。\t  ';
+  const records = Array.from({ length: 35 }, (_, index) => note(`radical-many-${index}`, { kind: 'component', target: '氵', category: '三点水·氵', content }));
+  for (const analysis of [null, {}, { radical: '？', decomposition: '⿰氵可', components: [] }]) assert.deepEqual(matchRadicalNotes(analysis, records), []);
+  const analysis = { radical: '三点水', components: [{ name: '氵', depth: 1 }, { name: '氵', depth: 4 }, { name: '？' }] };
+  const before = JSON.stringify({ analysis, records });
+  const result = matchRadicalNotes(analysis, [...records, records[0]]);
+  assert.equal(result.length, 35);
+  assert.ok(result.every(row => row.note.content === content));
+  assert.deepEqual(result[0].matchedKeywords, ['氵', '三点水']);
+  assert.equal(JSON.stringify({ analysis, records }), before);
+});
+
+test('fixed radical names do not leak their internal characters into a different glyph match', () => {
+  for (const [independent, variant, alias] of [['水', '氵', '三点水'], ['手', '扌', '提手旁'], ['人', '亻', '单人旁']]) {
+    const categoryOnly = note('radical-alias-with-internal-glyph', { category: `${alias}练习` });
+    const variantTarget = note('radical-variant-only', { kind: 'component', target: variant });
+    assert.deepEqual(matchRadicalNotes({ radical: independent }, [categoryOnly, variantTarget]), []);
+    assert.deepEqual(matchRadicalNotes({ radical: variant }, [categoryOnly, variantTarget]).map(row => row.note.id), [categoryOnly.id, variantTarget.id]);
+    const comparison = note('radical-explicit-comparison', { category: `${independent}与${alias}比较` });
+    assert.deepEqual(matchRadicalNotes({ radical: independent }, [comparison])[0].matchedKeywords, [independent]);
+  }
+});
+
+test('user-facing validation names components as 偏旁 without changing backup component keys', () => {
+  for (const invalid of [
+    () => note('bad-radical-target', { kind: 'component', target: '未知偏旁名' }),
+    () => note('bad-radical-position', { position: 'unknown' }),
+    () => normalizeOverride({ character: '河', components: [null] }),
+  ]) assert.throws(invalid, (error) => /偏旁/.test(error.message) && !/部件|构件/.test(error.message));
+  const original = note('old-component-keys', { kind: 'component', target: '氵', content: '原始部件笔记：不要改字。' });
+  const backup = makeBackup([original], [correction()]);
+  const restored = applyImport(planImport(backup, [], []));
+  assert.equal(restored.notes[0].kind, 'component');
+  assert.equal(restored.notes[0].content, original.content);
+  assert.ok(Array.isArray(restored.overrides[0].components));
 });

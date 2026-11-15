@@ -24,10 +24,10 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
   async function until(predicate,message='Expected UI state was not reached'){
     const deadline=Date.now()+3500;while(Date.now()<deadline){if(predicate())return;await delay(12);}assert.fail(message);
   }
-  async function setup(t,{saved,realEngine=false,tickingClock=false,namesData,holdAnimation=false}={}){
+  async function setup(t,{saved,realEngine=false,tickingClock=false,namesData,typesData,holdAnimation=false,apiHandler}={}){
     const consoleErrors=[],virtualConsole=new VirtualConsole();virtualConsole.on('jsdomError',error=>consoleErrors.push(error));
     const dom=new JSDOM(html,{url:'https://example.github.io/moxi-calligraphy/',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole});
-    const w=dom.window,doc=w.document,downloads=[],calls=[],animations=[],engineCalls=[];t.after(()=>w.close());
+    const w=dom.window,doc=w.document,downloads=[],calls=[],animations=[],engineCalls=[],apiRequests=[];t.after(async()=>{doc.getElementById('ai-disconnect')?.click();await delay(10);w.close();});
     const style=doc.createElement('style');style.textContent=css;doc.head.append(style);
     if(tickingClock){const RealDate=w.Date;let clock=RealDate.now();w.Date=class extends RealDate{constructor(...args){super(...(args.length?args:[++clock]));}static now(){return ++clock;}};}
     w.scrollTo=()=>{};w.Blob=Blob;w.URL.createObjectURL=blob=>{downloads.push(blob);return 'blob:local-export';};w.URL.revokeObjectURL=()=>{};
@@ -35,10 +35,12 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
     w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
     w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
     w.localStorage.setItem('moxi-legacy-learning','preserve me');if(saved)w.localStorage.setItem(storageKey,JSON.stringify(saved));
-    w.fetch=async input=>{
-      const pathname=new URL(String(input),w.location.href).pathname;calls.push(pathname);let value;
+    w.fetch=async (input,options={})=>{
+      const url=new URL(String(input),w.location.href),pathname=url.pathname;calls.push(pathname);let value;
+      if(url.origin!==w.location.origin){const request={url:url.href,options};apiRequests.push(request);if(!apiHandler)throw Error('External request was not expected');return apiHandler(request,w);}
       if(pathname.endsWith('/data/characters.json'))value=metadata;
       else if(pathname.endsWith('/data/stroke-names.json'))value=namesData??JSON.parse(await readFile(path.join(root,'data/stroke-names.json'),'utf8'));
+      else if(pathname.endsWith('/data/stroke-types.json'))value=typesData??JSON.parse(await readFile(path.join(root,'data/stroke-types.json'),'utf8'));
       else if(pathname.includes('/data/characters/')){
         try{value=JSON.parse(await readFile(path.join(root,'data/characters',decodeURIComponent(pathname.split('/').at(-1))),'utf8'));}catch{return{ok:false,status:404};}
       }else throw Error(`Unexpected network request: ${pathname}`);
@@ -65,13 +67,14 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
     const set=(id,value)=>{$(id).value=value;$(id).dispatchEvent(new w.Event('change',{bubbles:true}));};
     await until(()=>$('fact-radical').textContent===metadata.永.radical,'Dictionary did not load');
     await until(()=>!$('stroke-status').textContent.includes('正在加载'),'Initial stroke request did not settle');
+    await until(()=>!$('stroke-types-status').textContent.includes('正在加载'),'Stroke type reference did not settle');
     const lookup=async char=>{doc.querySelector('[data-page="lookup"]').click();set('character-input',char);submit('lookup-form');await until(()=>$('current-character').textContent===char);await until(()=>!$('stroke-status').textContent.includes('正在加载'),'Stroke request did not settle');};
     const newNote=async({kind='component',target='氵',position='left',content='  第一行\n第二行：保持原文。\n',conditions='',title='三点水笔记',category=''}={})=>{
       doc.querySelector('[data-page="notebook"]').click();$('new-note').click();for(const [id,value]of Object.entries({'note-kind':kind,'note-title':title,'note-target':target,'note-position':position,'note-scope':'top','note-category':category,'note-conditions':conditions,'note-content':content,'note-source':'测试用个人笔记，非教材引用'}))set(id,value);
       submit('note-form');await until(()=>!$('note-dialog').open,`Note did not save: ${$('note-form-status').textContent}`);
     };
     const importText=async text=>{Object.defineProperty($('import-file'),'files',{configurable:true,value:[{name:'backup.json',size:Buffer.byteLength(text),text:async()=>text}]});$('import-file').dispatchEvent(new w.Event('change',{bubbles:true}));await delay(45);};
-    return{w,doc,$,set,submit,lookup,newNote,importText,calls,downloads,consoleErrors,animations,engineCalls};
+    return{w,doc,$,set,submit,lookup,newNote,importText,calls,downloads,consoleErrors,animations,engineCalls,apiRequests};
   }
   test('real page boots with only three simplified sections and preserves legacy storage',async t=>{
     const {$,doc,w,calls,consoleErrors}=await setup(t);assert.match(doc.title,/一字一法/);assert.match($('fact-count').textContent,/5/);
@@ -79,7 +82,7 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
     assert.equal(w.getComputedStyle(doc.documentElement).getPropertyValue('--paper').trim(),'#F6F3EB');assert.equal(consoleErrors.filter(error=>/CSS|stylesheet/.test(error.message)).length,0);
     for(const page of ['lookup','notebook','data']){doc.querySelector(`[data-page="${page}"]`).click();assert.equal($(`page-${page}`).hidden,false);}
     assert.equal(doc.getElementById('teacher-form'),null);assert.equal(doc.getElementById('practice-canvas'),null);
-    assert.equal(w.localStorage.getItem('moxi-legacy-learning'),'preserve me');assert.ok(calls.every(url=>url.includes('/data/characters')||url.endsWith('/data/stroke-names.json')));
+    assert.equal(w.localStorage.getItem('moxi-legacy-learning'),'preserve me');assert.ok(calls.every(url=>url.includes('/data/characters')||/\/data\/stroke-(names|types)\.json$/.test(url)));
   });
   test('actual Hanzi Writer creates SVG from the bundled character data',async t=>{
     const {$,lookup}=await setup(t,{realEngine:true});await until(()=>$('writer-target').querySelectorAll('svg path').length>0,'Real library did not create SVG');assert.equal($('glyph-fallback').hidden,true);
@@ -133,7 +136,7 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
     doc.querySelector('#override-components input').value='氵';doc.querySelector('#override-components select').value='left';submit('override-form');
     await until(()=>!$('override-dialog').open);assert.match($('analysis-label').textContent,/用户修订/);assert.match($('matched-notes').textContent,/三点水笔记/);assert.equal($('play-button').disabled,true);
     $('edit-character').click();for(const button of doc.querySelectorAll('#override-components .remove-component'))button.click();submit('override-form');
-    assert.doesNotMatch($('matched-notes').textContent,/三点水笔记/);assert.equal($('component-list').querySelectorAll('.component-chip').length,0);
+    assert.match($('matched-notes').textContent,/三点水笔记/);assert.equal($('component-list').querySelectorAll('.component-chip').length,0); // The explicitly entered radical 氵 still matches.
   });
   test('editing preserves identity and deletion requires the confirmation dialog',async t=>{
     const {$,set,submit,newNote,doc,w}=await setup(t);await newNote();const original=JSON.parse(w.localStorage.getItem(storageKey)).notes[0];
@@ -152,7 +155,7 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
     const {doc,$,lookup}=await setup(t);assert.equal(doc.querySelectorAll('button#new-note').length,1);assert.equal($('new-note').closest('.page').id,'page-notebook');
     assert.equal($('add-character-note'),null);assert.equal($('add-structure-note'),null);assert.equal($('page-lookup').querySelectorAll('button').length>0,true);
     await lookup('河');for(const chip of doc.querySelectorAll('.component-chip')){assert.notEqual(chip.tagName,'BUTTON');chip.click();}
-    assert.equal($('note-dialog').open,false);assert.ok([...doc.querySelectorAll('details summary')].some(summary=>/部件/.test(summary.textContent)));assert.ok([...doc.querySelectorAll('details summary')].some(summary=>/第一次/.test(summary.textContent)));
+    assert.equal($('note-dialog').open,false);assert.ok([...doc.querySelectorAll('details summary')].some(summary=>/偏旁/.test(summary.textContent)));assert.ok([...doc.querySelectorAll('details summary')].some(summary=>/第一次/.test(summary.textContent)));
   });
   test('existing notes can be reclassified and filtered without changing cross-character matching',async t=>{
     const {doc,$,newNote,set,submit,lookup,w}=await setup(t);await newNote({category:'偏旁练习'});await newNote({kind:'character',target:'桥',category:'易错字',title:'桥字笔记',content:'另一条内容'});
@@ -172,21 +175,19 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
     const imported=await setup(t);await imported.importText(JSON.stringify(legacy));imported.$('confirm-import').click();assert.equal(JSON.parse(imported.w.localStorage.getItem(storageKey)).notes[0].category,'');
   });
   test('stroke references include all matching categories across note kinds and never match body text alone',async t=>{
-    const {$,doc,newNote,w}=await setup(t);
+    const {$,doc,newNote,lookup}=await setup(t);
     await newNote({kind:'stroke',target:'横',category:'长横练习',title:'长横记录',content:'  长横原文\n保持换行  '});
     await newNote({kind:'character',target:'橋',category:'短横观察',title:'短横记录',content:'短横原文'});
     await newNote({kind:'component',target:'氵',category:'横折关联',title:'复合笔画记录',content:'复合笔画原文'});
     await newNote({kind:'stroke',target:'竖',category:'竖画练习',title:'竖画记录',content:'竖画原文'});
-    await newNote({kind:'stroke',target:'捺',category:'其他',title:'正文不匹配',content:'横折钩只写在正文'});
+    await newNote({kind:'character',target:'某',category:'其他',title:'正文不匹配',content:'横折钩只写在正文'});
     doc.querySelector('[data-page="lookup"]').click();
-    const query=name=>{$('stroke-name-input').value=name;$('stroke-name-input').dispatchEvent(new w.Event('input',{bubbles:true}));};
-    query('横');assert.equal($('stroke-matched-notes').querySelectorAll('.note-card').length,3);
+    await lookup('一');assert.equal($('stroke-matched-notes').querySelectorAll('.note-card').length,3);
     assert.match($('stroke-matched-notes').textContent,/短横记录/);assert.match($('stroke-matched-notes').textContent,/复合笔画记录/);assert.doesNotMatch($('stroke-matched-notes').textContent,/竖画记录|正文不匹配/);
     assert.equal($('stroke-matched-notes').querySelector('.note-content').textContent,'  长横原文\n保持换行  ');
-    query('竖');assert.equal($('stroke-matched-notes').querySelectorAll('.note-card').length,1);assert.match($('stroke-matched-notes').textContent,/竖画记录/);
-    query('横折钩');assert.equal($('stroke-matched-notes').querySelectorAll('.note-card').length,3);assert.match($('stroke-matched-notes').textContent,/相关候选/);
-    query('<横>');assert.match($('stroke-matched-notes').textContent,/未检索/);assert.equal(doc.querySelector('#stroke-matched-notes img'),null);
-    query('');assert.equal($('stroke-matched-notes').querySelectorAll('.note-card').length,0);
+    await lookup('木');assert.equal($('stroke-matched-notes').querySelectorAll('.note-card').length,4);assert.match($('stroke-matched-notes').textContent,/竖画记录/);
+    assert.equal($('stroke-name-input').type,'hidden');assert.equal($('stroke-position').textContent,'逐笔观察');
+    await lookup('丶');assert.equal($('stroke-matched-notes').querySelectorAll('.note-card').length,0);
   });
   test('stroke notes survive the current backup flow and stay separate from whole-character matches',async t=>{
     const first=await setup(t);await first.newNote({kind:'stroke',target:'横',category:'短横观察',content:'笔画原始内容'});
@@ -196,21 +197,19 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
     assert.equal(JSON.parse(second.w.localStorage.getItem(storageKey)).notes[0].kind,'stroke');
     second.set('note-kind-filter','stroke');assert.match(second.$('notebook-list').textContent,/笔画原始内容/);
     await second.lookup('横');assert.doesNotMatch(second.$('matched-notes').textContent,/笔画原始内容/);
-    second.$('stroke-name-input').value='横';second.$('stroke-name-input').dispatchEvent(new second.w.Event('input',{bubbles:true}));assert.match(second.$('stroke-matched-notes').textContent,/笔画原始内容/);
+    assert.match(second.$('stroke-matched-notes').textContent,/笔画原始内容/);
   });
-  test('known stroke names follow single-step navigation and manual adjustments do not leak between characters',async t=>{
-    const {$,lookup,w}=await setup(t);await lookup('木');
+  test('single-step names remain independent of the automatically matched whole-character inventory',async t=>{
+    const {$,lookup}=await setup(t);await lookup('木');
     for(const name of ['横','竖','撇','捺']){$('next-stroke').click();await until(()=>$('stroke-name-input').value===name);assert.match($('stroke-name-source').textContent,/CNChar/);}
     $('previous-stroke').click();assert.equal($('stroke-name-input').value,'撇');
-    $('stroke-name-input').value='长撇';$('stroke-name-input').dispatchEvent(new w.Event('input',{bubbles:true}));
-    $('previous-stroke').click();assert.equal($('stroke-name-input').value,'竖');$('next-stroke').click();assert.equal($('stroke-name-input').value,'长撇');
-    await lookup('橋');$('next-stroke').click();assert.equal($('stroke-name-input').value,'');assert.match($('stroke-name-source').textContent,/没有|未知/);
+    await lookup('橋');assert.match($('stroke-types-list').textContent,/横/);$('next-stroke').click();assert.equal($('stroke-name-input').value,'');assert.match($('stroke-name-source').textContent,/没有|未知/);
     await lookup('木');$('next-stroke').click();assert.equal($('stroke-name-input').value,'横');await until(()=>$('pause-button').disabled);
   });
   test('ambiguous or mismatched name records stay unknown without disabling stroke animation',async t=>{
     const {$,lookup}=await setup(t,{namesData:{schemaVersion:1,characters:{木:['横'],永:['点','横折钩',null,'撇','捺']}}});
     await lookup('木');$('next-stroke').click();assert.equal($('stroke-name-input').value,'');assert.equal($('play-button').disabled,false);
-    await lookup('永');for(let i=0;i<3;i++)$('next-stroke').click();assert.equal($('stroke-name-input').value,'');assert.match($('stroke-matched-notes').textContent,/名称未知/);await until(()=>$('pause-button').disabled);
+    await lookup('永');for(let i=0;i<3;i++)$('next-stroke').click();assert.equal($('stroke-name-input').value,'');assert.match($('stroke-types-list').textContent,/横撇/);await until(()=>$('pause-button').disabled);
   });
   test('replaying the same stroke cannot let an older completion disable the new pause control',async t=>{
     const {$,lookup,animations}=await setup(t,{holdAnimation:true});await lookup('木');
@@ -231,5 +230,58 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
     const {$,animations}=await setup(t,{holdAnimation:true});$('play-button').click();await until(()=>animations.length===1);animations[0].fail();
     await until(()=>$('stroke-status').textContent.includes('播放失败'));assert.equal($('pause-button').disabled,true);assert.equal($('replay-button').disabled,false);
     $('replay-button').click();await until(()=>animations.length===2);assert.equal($('pause-button').disabled,false);
+  });
+  async function configureAI(h,{endpoint='https://model-a.example/custom/chat',model='model-a',key='session-secret-alpha',auto=true}={}){
+    h.$('ai-settings-button').click();h.set('ai-endpoint',endpoint);h.set('ai-model',model);h.set('ai-api-key',key);h.$('ai-auto').checked=auto;h.submit('ai-settings-form');
+    await until(()=>!h.$('ai-settings-dialog').open,`AI settings failed: ${h.$('ai-settings-status').textContent}`);
+  }
+  function aiReply(character,structure='左右结构',analysis='观察左右偏旁的配合。'){
+    return{ok:true,status:200,json:async()=>({choices:[{message:{content:JSON.stringify({character,structure,analysis,suggestions:['先比较两侧高低，再对照例字。'],uncertainty:'AI 推演，需要核对。'})}}]})};
+  }
+  test('typing one character automatically lists long and short strokes and every related radical note',async t=>{
+    const h=await setup(t);await h.newNote({kind:'stroke',target:'长横',category:'基本笔画',title:'长横法',content:'长横原始记录'});
+    await h.newNote({kind:'stroke',target:'短横',category:'基本笔画',title:'短横法',content:'短横原始记录'});
+    await h.newNote({kind:'component',target:'氵',position:'right',title:'偏旁的另一位置',content:'另一位置的写法也应列参考'});
+    await h.lookup('河');assert.match(h.$('stroke-matched-notes').textContent,/长横法/);assert.match(h.$('stroke-matched-notes').textContent,/短横法/);assert.match(h.$('matched-notes').textContent,/偏旁的另一位置/);assert.match(h.$('matched-notes').textContent,/右侧/);
+    assert.equal(h.$('stroke-position').textContent,'逐笔观察');assert.doesNotMatch(h.doc.body.textContent,/部件|构件/);
+  });
+  test('missing type records remain explicit and never block radical matches or animation',async t=>{
+    const h=await setup(t,{typesData:{schemaVersion:1,characters:{},ambiguousTypes:{}}});await h.newNote();await h.lookup('河');
+    assert.match(h.$('stroke-types-status').textContent,/未收录/);assert.equal(h.$('stroke-matched-notes').querySelectorAll('.note-card').length,0);assert.match(h.$('matched-notes').textContent,/三点水笔记/);assert.equal(h.$('play-button').disabled,false);
+  });
+  test('AI structure analysis starts on lookup and associates notes without persisting credentials or sending private notes',async t=>{
+    const h=await setup(t,{apiHandler:request=>aiReply(JSON.parse(JSON.parse(request.options.body).messages[1].content).character)});
+    assert.equal(h.apiRequests.length,0);await h.newNote({kind:'structure',target:'左右结构',content:'PRIVATE_NOTE_KEEP_LOCAL',category:'间架结构'});
+    await configureAI(h);await until(()=>h.$('ai-structure-analysis').textContent.includes('观察左右'));
+    await h.lookup('河');await until(()=>h.$('ai-structure-status').textContent.includes('AI 分析'));assert.match(h.$('matched-notes').textContent,/PRIVATE_NOTE_KEEP_LOCAL/);
+    assert.equal(h.$('ai-structure-type').textContent,'左右结构');assert.match(h.$('ai-structure-status').textContent,/AI/);
+    assert.ok(h.apiRequests.every(request=>!request.options.body.includes('PRIVATE_NOTE_KEEP_LOCAL')&&!request.options.body.includes('session-secret-alpha')));
+    const values=Array.from({length:h.w.localStorage.length},(_,i)=>h.w.localStorage.getItem(h.w.localStorage.key(i))).join('');assert.ok(!values.includes('session-secret-alpha'));
+    h.$('export-backup').click();await until(()=>h.downloads.length);assert.ok(!(await h.downloads.at(-1).text()).includes('session-secret-alpha'));
+    assert.equal(h.$('ai-api-key').value,'');
+  });
+  test('API can change at any time and a late response from the previous endpoint cannot replace the new analysis',async t=>{
+    const pending=[];const h=await setup(t,{apiHandler:request=>new Promise(resolve=>pending.push({request,resolve}))});
+    await configureAI(h);await until(()=>pending.length===1);
+    await configureAI(h,{endpoint:'https://model-b.example/gateway',model:'model-b',key:'session-secret-beta'});await until(()=>pending.length===2);
+    assert.equal(pending[0].request.options.signal.aborted,true);assert.equal(pending[1].request.options.headers.Authorization,'Bearer session-secret-beta');
+    pending[1].resolve(aiReply('永','独体字','新接口的分析'));await until(()=>h.$('ai-structure-analysis').textContent.includes('新接口'));
+    pending[0].resolve(aiReply('永','上下结构','旧接口迟到的分析'));await delay(20);assert.equal(h.$('ai-structure-type').textContent,'独体字');assert.doesNotMatch(h.$('ai-structure-analysis').textContent,/迟到/);
+    await h.lookup('河');await until(()=>pending.length===3);assert.equal(pending[2].request.url,'https://model-b.example/gateway');
+    pending[2].resolve(aiReply('河'));await until(()=>h.$('ai-structure-analysis').textContent.includes('观察左右'));
+  });
+  test('manual analysis mode, failure messages and disconnect leave the automatic local notebook usable',async t=>{
+    const h=await setup(t,{apiHandler:()=>({ok:false,status:401})});await configureAI(h,{auto:false});assert.equal(h.apiRequests.length,0);
+    await h.lookup('木');assert.equal(h.apiRequests.length,0);h.$('analyze-structure').click();await until(()=>h.$('ai-structure-status').textContent.includes('401'));assert.equal(h.$('play-button').disabled,false);
+    h.$('ai-settings-button').click();h.$('ai-disconnect').click();assert.match(h.$('ai-structure-status').textContent,/尚未配置/);await h.lookup('河');assert.equal(h.apiRequests.length,1);
+    await h.newNote();await h.lookup('江');assert.match(h.$('matched-notes').textContent,/三点水笔记/);
+  });
+  test('AI uses only public dictionary references and keeps personal corrections visibly separate',async t=>{
+    const h=await setup(t,{apiHandler:request=>aiReply(JSON.parse(JSON.parse(request.options.body).messages[1].content).character)});await h.lookup('河');
+    h.$('edit-character').click();h.set('override-radical','木');h.set('override-structure','上下结构');h.set('override-decomposition','⿱木木');h.submit('override-form');
+    await configureAI(h);await until(()=>h.$('ai-structure-type').textContent==='左右结构');
+    assert.equal(h.$('fact-radical').textContent,'木');assert.equal(h.$('fact-structure').textContent,'上下结构');assert.match(h.$('analysis-label').textContent,/用户修订/);
+    const data=JSON.parse(JSON.parse(h.apiRequests[0].options.body).messages[1].content);assert.equal(data.reference.radical,metadata.河.radical);assert.equal(data.reference.decomposition,metadata.河.decomposition);assert.notEqual(data.reference.decomposition,'⿱木木');
+    h.$('edit-character').click();h.$('reset-override').click();h.$('confirm-yes').click();assert.equal(h.$('fact-radical').textContent,metadata.河.radical);assert.equal(h.$('ai-structure-type').textContent,'左右结构');
   });
 }

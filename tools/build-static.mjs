@@ -6,8 +6,8 @@ import { fileURLToPath } from 'node:url';
 const root = await realpath(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'));
 const destination = path.join(root, 'dist');
 const entries = [
-  'index.html', 'styles.css', 'app.js', 'model.js',
-  'data/characters.json', 'data/characters', 'data/source-manifest.json', 'data/stroke-names.json',
+  'index.html', 'styles.css', 'app.js', 'model.js', 'ai.js',
+  'data/characters.json', 'data/characters', 'data/source-manifest.json', 'data/stroke-names.json', 'data/stroke-types.json',
   'vendor/hanzi-writer.min.js', 'vendor/fonts/moxi-book-serif.woff2', 'licenses',
 ];
 const approved = new Map();

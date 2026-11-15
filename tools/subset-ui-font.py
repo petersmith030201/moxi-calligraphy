@@ -14,7 +14,7 @@ parser.add_argument('font',type=Path)
 parser.add_argument('license',type=Path)
 args=parser.parse_args()
 root=Path(__file__).resolve().parents[1]
-text=''.join((root/name).read_text(encoding='utf-8') for name in ['index.html','app.js','model.js','store.js'])
+text=''.join((root/name).read_text(encoding='utf-8') for name in ['index.html','app.js','model.js','store.js','ai.js'])
 text+=''.join(chr(i) for i in range(32,127))+'墨习一字一法简体繁體汉字漢字查字我的知识库数据管理导入导出左右上下内外中独体结构偏旁部首笔画順序动画'
 font=TTFont(args.font)
 options=subset.Options()

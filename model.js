@@ -70,14 +70,14 @@ function glyph(value) {
 }
 function character(value, label = '汉字') {
   const result = text(value, label, 4);
-  if (!glyph(result)) throw new Error(`${label}请填写一个汉字或汉字部件字符。`);
+  if (!glyph(result)) throw new Error(`${label}请填写一个汉字或汉字偏旁字符。`);
   return result;
 }
 function component(value) {
-  const result = text(value, '部件', 32);
+  const result = text(value, '偏旁', 32);
   if (glyph(result)) return result;
   if (COMPONENT_NAMES.has(result)) return COMPONENT_NAMES.get(result);
-  throw new Error('部件请填写实际部件字符，或已知名称（如三点水、木字旁、提手旁）；不自动合并水与氵。');
+  throw new Error('偏旁请填写实际偏旁字符，或已知名称（如三点水、木字旁、提手旁）；不自动合并水与氵。');
 }
 function structure(value, optional = false) {
   const result = text(value, '结构', 32);
@@ -113,13 +113,13 @@ function normalize(raw, strict = false) {
     onlyKeys(raw, NOTE_KEYS, '笔记');
     for (const key of NOTE_KEYS) if (!Object.hasOwn(raw, key)) throw new Error(`笔记缺少字段：${key}。`);
   }
-  if (!KINDS.has(raw.kind)) throw new Error('笔记类型须为汉字、部件、结构或笔画。');
+  if (!KINDS.has(raw.kind)) throw new Error('笔记类型须为汉字、偏旁、结构或笔画。');
   const target = raw.kind === 'character' ? character(raw.target) : raw.kind === 'component' ? component(raw.target)
     : raw.kind === 'stroke' ? stroke(raw.target) : structure(raw.target);
   const position = raw.position ?? 'any';
   const scope = raw.scope ?? 'top';
-  if (!POSITIONS.has(position)) throw new Error('部件位置无效。');
-  if (!SCOPES.has(scope)) throw new Error('匹配范围须为一级部件或任意层级。');
+  if (!POSITIONS.has(position)) throw new Error('偏旁位置无效。');
+  if (!SCOPES.has(scope)) throw new Error('匹配范围须为一级偏旁或任意层级。');
   const content = text(raw.content, '笔记正文', 20000, false);
   if (!content.trim()) throw new Error('请填写笔记正文。');
   const examples = raw.examples ?? [];
@@ -147,12 +147,12 @@ function normalizeCorrection(raw, strict = false) {
     for (const key of OVERRIDE_KEYS) if (!Object.hasOwn(raw, key)) throw new Error(`字形修订缺少字段：${key}。`);
   }
   const parts = raw.components ?? [];
-  if (!Array.isArray(parts) || parts.length > 40) throw new Error('手动一级部件最多40项。');
+  if (!Array.isArray(parts) || parts.length > 40) throw new Error('手动一级偏旁最多40项。');
   const components = parts.map((part) => {
-    if (!object(part)) throw new Error('部件须包含name和position。');
-    onlyKeys(part, new Set(['name', 'position']), '部件');
+    if (!object(part)) throw new Error('偏旁须包含name和position。');
+    onlyKeys(part, new Set(['name', 'position']), '偏旁');
     const position = part.position ?? 'any';
-    if (!POSITIONS.has(position)) throw new Error('手动部件位置无效。');
+    if (!POSITIONS.has(position)) throw new Error('手动偏旁位置无效。');
     return { name: component(part.name), position };
   });
   return {
@@ -251,7 +251,7 @@ export function analyzeCharacter(value, metadata, overrides = {}) {
     source: correction ? `用户修订；原参考：${originalSource}` : originalSource,
     structureSource: correction ? '用户修订' : COMMON_INDEPENDENT.has(current)
       ? '本站整理的常见独体字参考校正（可修订）' : base.structureSource || 'IDS拓扑参考（非书法结构规范）',
-    reviewNotes: correction ? '手动一级部件按用户输入保留；空数组表示清空。'
+    reviewNotes: correction ? '手动一级偏旁按用户输入保留；空数组表示清空。'
       : base.reviewNotes || '原始IDS保留；未知组合不推定为独体字，结构参考可由用户修订。',
     uncertain, userEdited: !!correction,
   };
@@ -283,9 +283,9 @@ export function matchNotes(value, analysis, notes) {
         && (note.scope === 'any-depth' || part.depth <= 1)
         && (note.position === 'any' || part.position === note.position));
       if (!matches.length) continue;
-      reasons.push(`部件字符匹配：${note.target}，未自动合并变体。`);
-      reasons.push(`位置：${matches.map((part) => POSITION_LABELS[part.position] || part.position).filter((part, index, all) => all.indexOf(part) === index).join('、')}；${note.scope === 'top' ? '限一级部件' : '允许嵌套部件'}。`);
-      if (matches.some((part) => part.depth > 1)) reasons.push('嵌套位置相对于其直接父部件，不代表整字中的同名位置。');
+      reasons.push(`偏旁字符匹配：${note.target}，未自动合并变体。`);
+      reasons.push(`位置：${matches.map((part) => POSITION_LABELS[part.position] || part.position).filter((part, index, all) => all.indexOf(part) === index).join('、')}；${note.scope === 'top' ? '限一级偏旁' : '允许嵌套偏旁'}。`);
+      if (matches.some((part) => part.depth > 1)) reasons.push('嵌套位置相对于其直接父偏旁，不代表整字中的同名位置。');
     }
     if (note.conditions.trim() || analysis?.uncertain) {
       if (note.conditions.trim()) reasons.push(`存在需人工判断的条件：${note.conditions}`);
@@ -318,6 +318,88 @@ export function matchStrokeNotes(strokeName, notes) {
     if (matchedKeywords.length) reasons.push(`分类文字匹配：${matchedKeywords.join('、')}（分类：${note.category}）。`);
     reasons.push('全部为相关候选；文字匹配不判断实际笔画长短、形状或写法适用性，正文保持原样。');
     results.push({ note, reasons, matchedKeywords });
+  }
+  return results;
+}
+
+// This uses a character's independently sourced stroke-type inventory, not an
+// index-aligned animation label or a prediction from the stroke outline.
+export function matchCharacterStrokeNotes(strokeTypes, notes) {
+  if (strokeTypes === null || strokeTypes === undefined) return [];
+  if (!Array.isArray(strokeTypes) || strokeTypes.length > 100) throw new Error('本字笔画类型须为最多100项的名称数组。');
+  const names = [...new Set(strokeTypes.map(stroke))];
+  if (!names.length || !Array.isArray(notes)) return [];
+  const keywords = STROKE_KEYWORDS.filter((keyword) => names.some((name) => name.includes(keyword)));
+  const results = [], seenIds = new Set();
+  for (const raw of notes) {
+    let note;
+    try { note = normalizeNote(raw); } catch { continue; }
+    if (seenIds.has(note.id)) continue;
+    const categoryKeywords = keywords.filter((keyword) => note.category.includes(keyword));
+    const targetKeywords = note.kind === 'stroke' ? keywords.filter((keyword) => note.target.includes(keyword)) : [];
+    const exactTarget = note.kind === 'stroke' && names.includes(note.target);
+    if (!categoryKeywords.length && !targetKeywords.length && !exactTarget) continue;
+    const reasons = [];
+    if (categoryKeywords.length) reasons.push(`分类文字匹配本字笔画类型：${categoryKeywords.join('、')}（分类：${note.category}）。`);
+    if (targetKeywords.length) reasons.push(`笔画笔记目标含相关关键词：${targetKeywords.join('、')}（目标：${note.target}）。`);
+    else if (exactTarget) reasons.push(`笔画目标名称精确匹配：${note.target}。`);
+    reasons.push('全部为相关候选；依据本字笔画类型名称检索，不按动画轨迹推断长短、具体笔次或写法适用性，正文保持原样。');
+    const matchedKeywords = keywords.filter((keyword) => categoryKeywords.includes(keyword) || targetKeywords.includes(keyword));
+    if (exactTarget && !matchedKeywords.length) matchedKeywords.push(note.target);
+    results.push({ note, reasons, matchedKeywords });
+    seenIds.add(note.id);
+  }
+  return results;
+}
+
+// The dictionary radical and every explicitly supplied decomposition item are
+// references in their own right. Names map only to the same recorded glyph;
+// glyph variants such as 水/氵 and 手/扌 remain distinct.
+export function matchRadicalNotes(analysis, notes) {
+  if (!object(analysis) || !Array.isArray(notes)) return [];
+  const identified = new Map();
+  function add(value, origin) {
+    let name;
+    try { name = component(value); } catch { return; }
+    if (!identified.has(name)) identified.set(name, { name, origins: new Set(), terms: [name] });
+    identified.get(name).origins.add(origin);
+  }
+  add(analysis.radical, '字典部首');
+  for (const part of Array.isArray(analysis.components) ? analysis.components : []) {
+    if (part && typeof part === 'object') add(part.name, part.depth > 1 ? '内层偏旁' : '已识别偏旁');
+  }
+  if (!identified.size) return [];
+  for (const [alias, name] of COMPONENT_NAMES) {
+    if (identified.has(name)) identified.get(name).terms.push(alias);
+  }
+  const results = [], seenIds = new Set();
+  for (const raw of notes) {
+    let note;
+    try { note = normalizeNote(raw); } catch { continue; }
+    if (seenIds.has(note.id)) continue;
+    const exactTarget = note.kind === 'component' ? identified.get(note.target) : null;
+    // A glyph inside a fixed name belongs to that name's recorded shape:
+    // 水 in 三点水 is not an additional reference to the separate 水 glyph.
+    const literalCategory = [...COMPONENT_NAMES.keys()].reduce((value, alias) => value.split(alias).join(''), note.category);
+    const categoryMatches = [...identified.values()].map((item) => ({
+      ...item, matched: item.terms.filter((term) => (term === item.name ? literalCategory : note.category).includes(term)),
+    })).filter((item) => item.matched.length);
+    if (!exactTarget && !categoryMatches.length) continue;
+    const reasons = [], matchedKeywords = [];
+    if (exactTarget) {
+      reasons.push(`偏旁字形精确匹配：${note.target}（来源：${[...exactTarget.origins].join('、')}）；未自动合并变体。`);
+      matchedKeywords.push(note.target);
+    }
+    if (categoryMatches.length) {
+      const terms = [...new Set(categoryMatches.flatMap((item) => item.matched))];
+      reasons.push(`分类文字匹配：${terms.join('、')}（分类：${note.category}）。`);
+      matchedKeywords.push(...terms);
+    }
+    if (note.kind === 'component') reasons.push(`原笔记位置：${POSITION_LABELS[note.position]}；范围：${note.scope === 'top' ? '一级偏旁' : '任意层级'}。本次展示全部相关偏旁参考，未按位置或层级筛除。`);
+    if (analysis.uncertain) reasons.push('基础拆分或结构仍有不确定之处，只使用已给出的部首与偏旁，需人工核对。');
+    reasons.push('全部为相关候选；保留原笔记条件与正文，不代表当前字形一定适用。');
+    results.push({ note, reasons, matchedKeywords: [...new Set(matchedKeywords)] });
+    seenIds.add(note.id);
   }
   return results;
 }
