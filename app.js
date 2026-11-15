@@ -1,5 +1,5 @@
-import { analyzeCharacter, matchNotes, normalizeNote, normalizeOverride, makeBackup, planImport, applyImport } from './model.js';
-import { readNotebook, saveNotebook, readPreviousNotebook } from './store.js';
+import { analyzeCharacter, matchNotes, normalizeNote, normalizeOverride, makeBackup, planImport, applyImport } from './model.js?v=0.3.0';
+import { readNotebook, saveNotebook, readPreviousNotebook } from './store.js?v=0.3.0';
 
 const $ = (id) => document.getElementById(id);
 const positions = { any: '不限位置', left: '左侧', right: '右侧', top: '上方', bottom: '下方', inside: '内部', outside: '外部', center: '中间', standalone: '独立成字' };
@@ -41,19 +41,18 @@ function renderAnalysis() {
   $('fact-radical').textContent = analysis.radical || '待核实'; $('fact-structure').textContent = analysis.structure || '待核实'; $('fact-decomposition').textContent = analysis.decomposition || '暂无可靠拆分';
   $('analysis-label').textContent = analysis.userEdited ? '用户修订 · 仅本机' : '数据库结构参考'; $('analysis-label').classList.toggle('user-edited', !!analysis.userEdited);
   $('analysis-source').textContent = `分析来源：${text(analysis.source) || (analysis.userEdited ? '用户手动修订' : '当前无可用数据')}。结构依据：${analysis.structureSource || '待核实'}。`;
-  $('analysis-uncertainty').textContent = `${analysis.uncertain ? '部分拆分或结构尚待核对。\n' : ''}${analysis.reviewNotes || ''}\n数据库结构与 IDS 描述为组合参考，不等于唯一的教学拆分；不据此虚构空间比例或书法重心。部件可点击记录写法。`;
+  $('analysis-uncertainty').textContent = `${analysis.uncertain ? '部分拆分或结构尚待核对。\n' : ''}${analysis.reviewNotes || ''}\n数据库结构与 IDS 描述为组合参考，不等于唯一的教学拆分；不据此虚构空间比例或书法重心。`;
   $('component-list').replaceChildren();
   for (const part of analysis.components || []) {
-    const chip = button('', () => openNote({ kind: 'component', target: part.name, position: part.position || 'any', scope: part.depth > 1 ? 'any-depth' : 'top' }), 'component-chip');
-    chip.append(document.createTextNode(part.name), element('small', '', `${part.depth > 1 ? '内层·' : ''}${positions[part.position] || '位置待核实'}${commonNames[part.name] ? ` · ${commonNames[part.name]}` : ''}`)); chip.title = `记录部件“${part.name}”在${positions[part.position] || '该位置'}的写法`; $('component-list').append(chip);
+    const chip = element('span', 'component-chip');
+    chip.append(document.createTextNode(part.name), element('small', '', `${part.depth > 1 ? '内层·' : ''}${positions[part.position] || '位置待核实'}${commonNames[part.name] ? ` · ${commonNames[part.name]}` : ''}`)); $('component-list').append(chip);
   }
   if (!analysis.components?.length) $('component-list').append(element('p', 'small-note', '暂无可靠部件数据，可手动修订后再匹配笔记。'));
-  $('add-character-note').textContent = `为「${state.character}」记一法 ＋`;
-  $('add-structure-note').disabled = !analysis.structure || analysis.structure === '结构待核对';
 }
 function noteCard(note, reasons = []) {
   const card = element('article', 'note-card'); const top = element('div', 'note-topline'); const heading = element('div'); const meta = element('div', 'note-meta');
   meta.append(element('span', 'note-kind', kinds[note.kind] || note.kind), element('span', '', note.target));
+  meta.append(element('span', 'category-label', `分类：${note.category || '未分类'}`));
   if (note.kind === 'component') meta.append(element('span', '', `${positions[note.position] || note.position} · ${note.scope === 'any-depth' ? '任意层级' : '最外层'}`));
   heading.append(meta, element('h3', '', note.title)); const controls = element('div', 'note-controls'); controls.append(button('编辑', () => openNote(note)), button('删除', () => confirmAction('删除这条笔记？', `将删除“${note.title}”。可先在数据管理中导出备份。`, () => commit({ ...state.data, notes: state.data.notes.filter((n) => n.id !== note.id) }, '笔记已删除。'), '确认删除'))); top.append(heading, controls); card.append(top);
   if (reasons.length) card.append(element('p', 'note-reasons', reasons.join('；')));
@@ -66,7 +65,7 @@ function noteCard(note, reasons = []) {
 function renderMatches() {
   $('matched-notes').replaceChildren();
   const matches = matchNotes(state.character, state.analysis, state.data.notes);
-  if (![...matches.exact, ...matches.applicable, ...matches.candidates].length) { const empty = element('div', 'empty-state'); empty.append(element('p', '', state.data.notes.length ? '当前没有匹配笔记。可检查拆分、修订部件，或为这个字记录第一条写法。' : '这里还没有你的笔记。先写下一条整字、部件或结构的写法，之后遇到相同对象时再翻出来。'), button('为这个字记一法 ＋', () => openNote({ kind: 'character', target: state.character }))); $('matched-notes').append(empty); return; }
+  if (![...matches.exact, ...matches.applicable, ...matches.candidates].length) { $('matched-notes').append(element('div', 'empty-state', state.data.notes.length ? '当前没有匹配笔记。可检查拆分、修订部件，或前往知识库整理笔记。' : '这里还没有你的笔记。前往知识库，用“新建笔记”记录第一条写法。')); return; }
   const labels = { exact: ['本字笔记', '整字精确关联'], applicable: ['可复用笔记', '符合对象、位置与层级'], candidates: ['候选参考', '先检查适用条件与差异'] };
   for (const key of ['exact', 'applicable', 'candidates']) {
     if (!matches[key].length) continue;
@@ -75,11 +74,22 @@ function renderMatches() {
   }
 }
 function renderNotebook() {
+  renderCategories();
   const query = $('note-search').value.trim().toLocaleLowerCase(); const kind = $('note-kind-filter').value;
-  const notes = state.data.notes.filter((n) => (kind === 'all' || n.kind === kind) && (!query || [n.title, n.target, n.content, n.conditions, n.source, ...(n.examples || [])].join('\n').toLocaleLowerCase().includes(query)));
+  const category = $('note-category-filter').value;
+  const notes = state.data.notes.filter((n) => (kind === 'all' || n.kind === kind) && (category === 'all' || (category === 'uncategorized' ? !n.category : `category:${n.category}` === category)) && (!query || [n.title, n.target, n.category || '', n.content, n.conditions, n.source, ...(n.examples || [])].join('\n').toLocaleLowerCase().includes(query)));
   $('note-count').textContent = `${notes.length} / ${state.data.notes.length} 条笔记`; $('notebook-list').replaceChildren();
   notes.forEach((n) => $('notebook-list').append(noteCard(n)));
   if (!notes.length) $('notebook-list').append(element('div', 'empty-state', state.data.notes.length ? '没有符合搜索条件的笔记。试试更短的关键词或切换类型。' : '空白的一页，等你落笔。点击“新建笔记”，记录第一条自己的书写方法。'));
+}
+function renderCategories() {
+  const categories = [...new Set(state.data.notes.map((n) => n.category || '').filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+  const select = $('note-category-filter'); const previous = select.value;
+  select.replaceChildren();
+  for (const [value, label] of [['all', '全部分类'], ['uncategorized', '未分类'], ...categories.map((category) => [`category:${category}`, category])]) { const option = element('option', '', label); option.value = value; select.append(option); }
+  select.value = [...select.options].some((option) => option.value === previous) ? previous : 'all';
+  $('note-category-options').replaceChildren();
+  for (const category of [...new Set([...categories, '基本笔画', '偏旁练习', '间架结构', '易错字', '待整理'])]) { const option = element('option'); option.value = category; $('note-category-options').append(option); }
 }
 function renderData() {
   $('total-notes').textContent = state.data.notes.length; $('total-overrides').textContent = state.data.overrides.length; $('total-aliases').textContent = state.data.aliases.length;
@@ -94,7 +104,7 @@ function updateNoteFields() { const component = $('note-kind').value === 'compon
 function fillPositions(select, value = 'any') { select.replaceChildren(); Object.entries(positions).forEach(([key, label]) => { const option = element('option', '', label); option.value = key; select.append(option); }); select.value = value in positions ? value : 'any'; }
 function openNote(note = {}) {
   $('note-form').reset(); $('note-id').value = note.id || ''; $('note-dialog-title').textContent = note.id ? '编辑书法笔记' : '新建书法笔记';
-  for (const key of ['title', 'kind', 'target', 'conditions', 'content', 'source']) $(`note-${key}`).value = note[key] || (key === 'kind' ? 'character' : '');
+  for (const key of ['title', 'kind', 'target', 'category', 'conditions', 'content', 'source']) $(`note-${key}`).value = note[key] || (key === 'kind' ? 'character' : '');
   $('note-position').value = note.position || 'any'; $('note-scope').value = note.scope || 'top'; $('note-examples').value = (note.examples || []).join('、'); status('note-form-status', ''); updateNoteFields(); openDialog('note-dialog'); $('note-title').focus();
 }
 function saveNote(event) {
@@ -103,6 +113,7 @@ function saveNote(event) {
     const previous = state.data.notes.find((n) => n.id === $('note-id').value);
     const timestamp = new Date().toISOString();
     const raw = { ...(previous || {}), title: $('note-title').value, kind: $('note-kind').value, target: $('note-target').value, position: $('note-position').disabled ? 'any' : $('note-position').value, scope: $('note-scope').disabled ? 'top' : $('note-scope').value, conditions: $('note-conditions').value, content: $('note-content').value, examples: $('note-examples').value.split(/[\s,，、;；]+/u).filter(Boolean), source: $('note-source').value, createdAt: previous?.createdAt || timestamp, updatedAt: timestamp };
+    raw.category = $('note-category').value;
     const note = normalizeNote(raw); const notes = previous ? state.data.notes.map((n) => n.id === previous.id ? note : n) : [...state.data.notes, note];
     commit({ ...state.data, notes }, '笔记已保存到本机。'); closeDialog('note-dialog');
   } catch (error) { status('note-form-status', error.message, true); }
@@ -160,7 +171,7 @@ function confirmImport() {
   } catch (error) { status('import-status', `合并失败：${error.message} 原有数据未改动。`, true); }
 }
 function setStrokeControls(enabled) { ['play-button', 'replay-button', 'previous-stroke', 'next-stroke', 'show-trajectory', 'animation-speed'].forEach((id) => { $(id).disabled = !enabled; }); $('pause-button').disabled = true; }
-async function fetchJSON(url) { const response = await fetch(url, { credentials: 'omit' }); if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json(); }
+async function fetchJSON(url, options = {}) { const response = await fetch(url, { credentials: 'omit', ...options }); if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json(); }
 async function loadStrokeData() {
   const version = ++state.loadVersion; const character = state.character;
   state.svgObserver?.disconnect(); state.svgObserver = null;
@@ -204,8 +215,9 @@ document.querySelectorAll('.nav-button').forEach((el) => el.addEventListener('cl
 document.querySelector('.brand').addEventListener('click', (event) => { event.preventDefault(); showPage('lookup'); });
 document.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', () => closeDialog(el.dataset.close)));
 $('lookup-form').addEventListener('submit', (event) => { event.preventDefault(); lookup($('character-input').value); });
-$('new-note').addEventListener('click', () => openNote()); $('add-character-note').addEventListener('click', () => openNote({ kind: 'character', target: state.character })); $('add-structure-note').addEventListener('click', () => openNote({ kind: 'structure', target: state.analysis.structure })); $('open-notebook').addEventListener('click', () => showPage('notebook'));
+$('new-note').addEventListener('click', () => openNote({ kind: 'character', target: state.character })); $('open-notebook').addEventListener('click', () => showPage('notebook'));
 $('note-form').addEventListener('submit', saveNote); $('note-kind').addEventListener('change', updateNoteFields); $('note-search').addEventListener('input', renderNotebook); $('note-kind-filter').addEventListener('change', renderNotebook);
+$('note-category-filter').addEventListener('change', renderNotebook);
 $('edit-character').addEventListener('click', openOverride); $('override-form').addEventListener('submit', saveOverride); $('add-override-component').addEventListener('click', () => addComponentRow());
 $('reset-override').addEventListener('click', () => { const character = $('override-character').value; confirmAction('恢复数据库分析？', `将移除“${character}”的个人修订，笔记保留。`, () => { commit({ ...state.data, overrides: state.data.overrides.filter((o) => o.character !== character) }, '已恢复数据库分析。'); closeDialog('override-dialog'); }, '确认恢复'); });
 $('confirm-no').addEventListener('click', () => { state.confirmAction = null; closeDialog('confirm-dialog'); }); $('confirm-yes').addEventListener('click', () => { const action = state.confirmAction; state.confirmAction = null; closeDialog('confirm-dialog'); action?.(); }); $('confirm-dialog').addEventListener('cancel', () => { state.confirmAction = null; });
@@ -219,5 +231,5 @@ const loaded = readNotebook();
 try { const backup = makeBackup(loaded.data.notes, loaded.data.overrides, loaded.data.aliases); state.data = applyImport(planImport(backup, [], [], [])); } catch (error) { showStorageFailure(`本机数据校验失败：${error.message} 原存储保留。`); }
 if (loaded.error) showStorageFailure(loaded.error);
 renderAll(); lookup('永');
-fetchJSON('./data/characters.json').then((data) => { if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('字典格式无效'); state.metadata = data; renderAnalysis(); renderMatches(); status('lookup-status', state.metadata[state.character] ? '字形与拆分来自数据库参考；个人笔记按原文呈现。' : '数据库未收录，仍可手动修订并记录笔记。'); }).catch(() => status('lookup-status', '字典暂未加载。可手动修订和记录；请通过 HTTP 服务打开网页。', true));
+fetchJSON('./data/characters.json', { cache: 'no-cache' }).then((data) => { if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('字典格式无效'); state.metadata = data; renderAnalysis(); renderMatches(); status('lookup-status', state.metadata[state.character] ? '字形与拆分来自数据库参考；个人笔记按原文呈现。' : '数据库未收录，仍可手动修订并记录笔记。'); }).catch(() => status('lookup-status', '字典暂未加载。可手动修订和记录；请通过 HTTP 服务打开网页。', true));
 const initialPage = location.hash.slice(1); if (['lookup', 'notebook', 'data'].includes(initialPage)) showPage(initialPage);

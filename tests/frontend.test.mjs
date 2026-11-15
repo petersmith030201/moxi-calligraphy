@@ -56,9 +56,9 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
     const set=(id,value)=>{$(id).value=value;$(id).dispatchEvent(new w.Event('change',{bubbles:true}));};
     await until(()=>$('fact-radical').textContent===metadata.永.radical,'Dictionary did not load');
     await until(()=>!$('stroke-status').textContent.includes('正在加载'),'Initial stroke request did not settle');
-    const lookup=async char=>{set('character-input',char);submit('lookup-form');await until(()=>$('current-character').textContent===char);await until(()=>!$('stroke-status').textContent.includes('正在加载'),'Stroke request did not settle');};
-    const newNote=async({kind='component',target='氵',position='left',content='  第一行\n第二行：保持原文。\n',conditions='',title='三点水笔记'}={})=>{
-      $('new-note').click();for(const [id,value]of Object.entries({'note-kind':kind,'note-title':title,'note-target':target,'note-position':position,'note-scope':'top','note-conditions':conditions,'note-content':content,'note-source':'测试用个人笔记，非教材引用'}))set(id,value);
+    const lookup=async char=>{doc.querySelector('[data-page="lookup"]').click();set('character-input',char);submit('lookup-form');await until(()=>$('current-character').textContent===char);await until(()=>!$('stroke-status').textContent.includes('正在加载'),'Stroke request did not settle');};
+    const newNote=async({kind='component',target='氵',position='left',content='  第一行\n第二行：保持原文。\n',conditions='',title='三点水笔记',category=''}={})=>{
+      doc.querySelector('[data-page="notebook"]').click();$('new-note').click();for(const [id,value]of Object.entries({'note-kind':kind,'note-title':title,'note-target':target,'note-position':position,'note-scope':'top','note-category':category,'note-conditions':conditions,'note-content':content,'note-source':'测试用个人笔记，非教材引用'}))set(id,value);
       submit('note-form');await until(()=>!$('note-dialog').open,`Note did not save: ${$('note-form-status').textContent}`);
     };
     const importText=async text=>{Object.defineProperty($('import-file'),'files',{configurable:true,value:[{name:'backup.json',size:Buffer.byteLength(text),text:async()=>text}]});$('import-file').dispatchEvent(new w.Event('change',{bubbles:true}));await delay(45);};
@@ -138,5 +138,28 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
     const {$,newNote,w,downloads}=await setup(t);w.Storage.prototype.setItem=function(){throw Error('QuotaExceededError');};await newNote();
     assert.equal($('storage-warning').hidden,false);assert.match($('storage-status').textContent,/未保存/);assert.equal(w.localStorage.getItem(storageKey),null);
     $('emergency-export').click();await until(()=>downloads.length>0);const backup=JSON.parse(await downloads.at(-1).text());assert.equal(backup.notes.length,1);
+  });
+  test('only the notebook has a create-note entry and lookup components are informational',async t=>{
+    const {doc,$,lookup}=await setup(t);assert.equal(doc.querySelectorAll('button#new-note').length,1);assert.equal($('new-note').closest('.page').id,'page-notebook');
+    assert.equal($('add-character-note'),null);assert.equal($('add-structure-note'),null);assert.equal($('page-lookup').querySelectorAll('button').length>0,true);
+    await lookup('河');for(const chip of doc.querySelectorAll('.component-chip')){assert.notEqual(chip.tagName,'BUTTON');chip.click();}
+    assert.equal($('note-dialog').open,false);assert.ok([...doc.querySelectorAll('details summary')].some(summary=>/部件/.test(summary.textContent)));assert.ok([...doc.querySelectorAll('details summary')].some(summary=>/第一次/.test(summary.textContent)));
+  });
+  test('existing notes can be reclassified and filtered without changing cross-character matching',async t=>{
+    const {doc,$,newNote,set,submit,lookup,w}=await setup(t);await newNote({category:'偏旁练习'});await newNote({kind:'character',target:'桥',category:'易错字',title:'桥字笔记',content:'另一条内容'});
+    const filter=$('note-category-filter'),choose=name=>{const option=[...filter.options].find(option=>option.textContent===name);assert.ok(option,`Missing category ${name}`);set('note-category-filter',option.value);};
+    choose('偏旁练习');assert.match($('notebook-list').textContent,/三点水笔记/);assert.doesNotMatch($('notebook-list').textContent,/桥字笔记/);
+    $('notebook-list').querySelector('.note-controls button').click();set('note-category','我的新分类');submit('note-form');assert.equal(JSON.parse(w.localStorage.getItem(storageKey)).notes.find(note=>note.target==='氵').category,'我的新分类');
+    choose('我的新分类');assert.match($('notebook-list').textContent,/三点水笔记/);await lookup('江');assert.match($('matched-notes').textContent,/三点水笔记/);assert.match($('matched-notes').textContent,/我的新分类/);
+  });
+  test('classification survives the v2 export and import flow',async t=>{
+    const first=await setup(t);await first.newNote({category:'all'});first.$('export-backup').click();await until(()=>first.downloads.length);const text=await first.downloads.at(-1).text();assert.equal(JSON.parse(text).schemaVersion,2);
+    const second=await setup(t);await second.importText(text);second.$('confirm-import').click();assert.equal(JSON.parse(second.w.localStorage.getItem(storageKey)).notes[0].category,'all');
+    const option=[...second.$('note-category-filter').options].find(option=>option.textContent==='all');assert.ok(option);assert.notEqual(option.value,'all');second.set('note-category-filter',option.value);assert.match(second.$('notebook-list').textContent,/三点水笔记/);
+  });
+  test('v1 backups and local records with no category remain visible as uncategorized',async t=>{
+    const first=await setup(t);await first.newNote();first.$('export-backup').click();await until(()=>first.downloads.length);const legacy=JSON.parse(await first.downloads.at(-1).text());legacy.schemaVersion=1;delete legacy.notes[0].category;
+    const stored=await setup(t,{saved:{notes:legacy.notes,overrides:[],aliases:[]}});assert.match(stored.$('notebook-list').textContent,/三点水笔记/);assert.match(stored.$('notebook-list').textContent,/未分类/);
+    const imported=await setup(t);await imported.importText(JSON.stringify(legacy));imported.$('confirm-import').click();assert.equal(JSON.parse(imported.w.localStorage.getItem(storageKey)).notes[0].category,'');
   });
 }

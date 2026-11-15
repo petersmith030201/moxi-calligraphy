@@ -6,7 +6,7 @@ const KINDS = new Set(['character', 'component', 'structure']);
 const SCOPES = new Set(['top', 'any-depth']);
 const COMMON_INDEPENDENT = new Set(Array.from('永天大木水火人一二三十上下口日月田目山川中土工小'));
 const UNSAFE = new Set(['__proto__', 'prototype', 'constructor']);
-const NOTE_KEYS = new Set(['id', 'title', 'kind', 'target', 'position', 'scope', 'conditions', 'content', 'examples', 'source', 'createdAt', 'updatedAt']);
+const NOTE_KEYS = new Set(['id', 'title', 'kind', 'target', 'position', 'scope', 'conditions', 'content', 'examples', 'source', 'category', 'createdAt', 'updatedAt']);
 const OVERRIDE_KEYS = new Set(['character', 'radical', 'decomposition', 'structure', 'components', 'updatedAt']);
 const STRUCTURES = new Map([
   ['左右', '左右结构'], ['左右结构', '左右结构'], ['上下', '上下结构'], ['上下结构', '上下结构'],
@@ -126,7 +126,8 @@ function normalize(raw, strict = false) {
     id: identifier(raw.id ?? newId()), title, kind: raw.kind, target, position, scope,
     conditions: text(raw.conditions ?? '', '适用条件', 2000, false), content,
     examples: [...new Set(examples.map((value) => character(value, '例字')))],
-    source: text(raw.source ?? '', '来源', 1000, false), createdAt, updatedAt,
+    source: text(raw.source ?? '', '来源', 1000, false),
+    category: text(raw.category === undefined ? '' : raw.category, '分类', 50), createdAt, updatedAt,
   };
 }
 export function normalizeNote(raw) { return normalize(raw); }
@@ -316,7 +317,7 @@ function snapshot(notes, overrides, aliases = [], strict = false) {
 }
 export function makeBackup(notes, overrides, aliases = []) {
   safe({ notes, overrides, aliases });
-  return { application: 'moxi-notebook', schemaVersion: 1, exportedAt: new Date().toISOString(), ...snapshot(notes, overrides, aliases) };
+  return { application: 'moxi-notebook', schemaVersion: 2, exportedAt: new Date().toISOString(), ...snapshot(notes, overrides, aliases) };
 }
 function fullNoteKey(note) {
   const { id, createdAt, updatedAt, ...content } = note;
@@ -325,7 +326,7 @@ function fullNoteKey(note) {
 function semanticKey(note) {
   // Deterministic field equivalence, not an AI judgment about prose meaning.
   return JSON.stringify([note.kind, note.target, note.position, note.scope, note.conditions.trim(),
-    note.content.trim(), [...note.examples].sort(), note.source.trim()]);
+    note.content.trim(), [...note.examples].sort(), note.source.trim(), note.category]);
 }
 function correctionKey(row) {
   const { updatedAt, ...content } = row;
@@ -342,11 +343,15 @@ export function planImport(backup, currentNotes, currentOverrides, aliases = [])
   if (!object(incoming)) throw new Error('备份顶层须为对象。');
   if (incoming.application === 'moxi') throw new Error('这是旧版墨习v0.1学习记录备份，不是新版写法笔记备份。请保留原文件；本次不会修改现有数据。');
   if (incoming.application !== 'moxi-notebook') throw new Error('请选择墨习写法笔记备份，application应为moxi-notebook。');
-  if (incoming.schemaVersion !== 1) throw new Error('此备份版本暂不支持，请保留原文件并使用兼容版本。');
+  if (![1, 2].includes(incoming.schemaVersion)) throw new Error('此备份版本暂不支持，请保留原文件并使用兼容版本。');
   onlyKeys(incoming, new Set(['application', 'schemaVersion', 'exportedAt', 'notes', 'overrides', 'aliases']), '备份');
   timestamp(incoming.exportedAt, null, '导出时间');
   if (!Array.isArray(incoming.overrides)) throw new Error('备份的overrides须为数组。');
-  const received = snapshot(incoming.notes, incoming.overrides, incoming.aliases, true);
+  // v1 did not have categories. Migrate in memory; never edit the input backup.
+  const incomingNotes = incoming.schemaVersion === 1 && Array.isArray(incoming.notes)
+    ? incoming.notes.map((row) => object(row) && !Object.hasOwn(row, 'category') ? { ...row, category: '' } : row)
+    : incoming.notes;
+  const received = snapshot(incomingNotes, incoming.overrides, incoming.aliases, true);
   safe({ currentNotes, currentOverrides, aliases });
   const current = snapshot(currentNotes, currentOverrides, aliases);
   const plan = {
@@ -361,7 +366,7 @@ export function planImport(backup, currentNotes, currentOverrides, aliases = [])
       if (fullNoteKey(local) === fullNoteKey(note)) plan.duplicates.push({ local, incoming: note, reason: '同ID同内容（忽略时间戳）' });
       else plan.conflicts.push({ id: note.id, local, incoming: note });
     } else if (bySemantic.has(semanticKey(note))) {
-      plan.duplicates.push({ local: bySemantic.get(semanticKey(note)), incoming: note, reason: '不同ID，但规范目标、范围、条件、正文、例字与来源一致' });
+      plan.duplicates.push({ local: bySemantic.get(semanticKey(note)), incoming: note, reason: '不同ID，但规范目标、范围、条件、正文、例字、来源与分类一致' });
     } else {
       plan.newNotes.push(note); byId.set(note.id, note); bySemantic.set(semanticKey(note), note);
     }

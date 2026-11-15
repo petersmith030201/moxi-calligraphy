@@ -10,6 +10,15 @@ const json = async relative => JSON.parse(await readFile(path.join(root, relativ
 const exists = async relative => access(path.join(root, relative)).then(() => true, () => false);
 const metadataPromise = json('data/characters.json');
 
+function localAsset(reference, owner = 'index.html') {
+  const url = new URL(reference, new URL(owner, 'https://moxi.invalid/'));
+  assert.equal(url.origin, 'https://moxi.invalid', reference);
+  const absolute = path.resolve(root, decodeURIComponent(url.pathname).slice(1));
+  const back = path.relative(root, absolute);
+  assert.ok(back && back !== '..' && !back.startsWith('..' + path.sep) && !path.isAbsolute(back), reference);
+  return { absolute, url };
+}
+
 function validSvgPath(value) {
   assert.equal(typeof value, 'string');
   const tokens = value.match(/[MmLlHhVvCcSsQqTtAaZz]|[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:[eE][-+]?\d+)?/g) || [];
@@ -92,12 +101,51 @@ test('active entry points have no legacy PDF/AI payloads or remote static/CDN im
   const css = await readFile(path.join(root, 'styles.css'), 'utf8');
   assert.doesNotMatch(html, /<(?:script|img|iframe|source|link)\b[^>]*(?:src|href)\s*=\s*["'](?:https?:)?\/\//i);
   assert.doesNotMatch(css, /(?:url\(\s*["']?|@import\s*["'])(?:https?:)?\/\//i);
+  for (const tag of html.matchAll(/<(?:script|link)\b[^>]*>/gi)) {
+    const reference = tag[0].match(/\b(?:src|href)\s*=\s*["']([^"']+)["']/i)?.[1];
+    if (!reference) continue;
+    const asset = localAsset(reference);
+    await access(asset.absolute);
+    if (['/app.js', '/styles.css'].includes(asset.url.pathname)) assert.equal(asset.url.searchParams.get('v'), '0.3.0', reference);
+  }
   const activeNames = ['index.html', 'styles.css', 'app.js', 'model.js'];
   if (await exists('store.js')) activeNames.push('store.js');
   for (const name of activeNames) {
     const contents = await readFile(path.join(root, name), 'utf8');
     assert.doesNotMatch(contents, /(?:pdf-local\.js|pdf\.worker\.mjs|data\/(?:knowledge|books|(?:atlas|strokes|structure)-rules)\.json)/i, name);
     assert.doesNotMatch(contents, /(?:import\s+(?:[^;]*?\sfrom\s*)?|import\(|fetch\()\s*["'](?:https?:)?\/\//i, name);
+    if (name.endsWith('.js')) {
+      for (const match of contents.matchAll(/\bfrom\s*["'](\.\.?\/[^"']+)["']/g)) {
+        const asset = localAsset(match[1], name);
+        await access(asset.absolute);
+        if (name === 'app.js' && ['/model.js', '/store.js'].includes(asset.url.pathname)) assert.equal(asset.url.searchParams.get('v'), '0.3.0', match[1]);
+      }
+    }
+  }
+});
+
+test('knowledge library is the sole new-note entry and offers collapsed first-use and component help', async () => {
+  const html = await readFile(path.join(root, 'index.html'), 'utf8');
+  const app = await readFile(path.join(root, 'app.js'), 'utf8');
+  const notebook = html.match(/<section\b[^>]*\bid=["']page-notebook["'][^>]*>([\s\S]*?)<\/section>/i)?.[1];
+  assert.ok(notebook, 'Knowledge library section must exist');
+  assert.equal([...html.matchAll(/<button\b[^>]*\bid=["']new-note["'][^>]*>/gi)].length, 1);
+  assert.match(notebook, /<button\b[^>]*\bid=["']new-note["']/i);
+  assert.doesNotMatch(html + app, /add-character-note|add-structure-note/);
+  for (const id of ['component-help', 'first-use-help']) {
+    const pattern = new RegExp(`<details\\b([^>]*\\bid=["']${id}["'][^>]*)>([\\s\\S]*?)<\\/details>`, 'i');
+    const details = html.match(pattern);
+    assert.ok(details, `${id} must exist`);
+    assert.doesNotMatch(details[1], /\bopen(?:\s|=|$)/i, `${id} should start collapsed`);
+    assert.match(details[2], /<summary\b[^>]*>[^<]+<\/summary>/i);
+    const text = details[2].replace(/<[^>]*>/g, ' ');
+    for (const character of ['河', '氵']) assert.ok(text.includes(character), `${id}: ${character}`);
+    if (id === 'component-help') assert.ok(text.includes('可'));
+    if (id === 'first-use-help') {
+      assert.match(text, /不是教材原文/);
+      assert.match(text, /分类/);
+      assert.match(text, /导出/);
+    }
   }
 });
 

@@ -241,3 +241,83 @@ test('reserved aliases survive backups and conflicts but never change component 
   assert.deepEqual(applyImport(conflict).aliases, localAliases);
   assert.deepEqual(applyImport(conflict, { aliases: { 水: 'incoming' } }).aliases, [{ alias: '水', target: '冫' }]);
 });
+
+test('legacy local notes default to unclassified and category names have a bounded length', () => {
+  const oldLocal = { ...note('legacy-local') };
+  delete oldLocal.category;
+  assert.equal(normalizeNote(oldLocal).category, '');
+  assert.equal(note('category-name', { category: '  左右结构观察  ' }).category, '左右结构观察');
+  assert.equal(note('category-limit', { category: '类'.repeat(50) }).category.length, 50);
+  assert.throws(() => note('category-too-long', { category: '类'.repeat(51) }), /分类/);
+  assert.throws(() => note('category-not-text', { category: null }), /分类/);
+});
+
+test('v1 notebook backups migrate a missing category without changing original input or body', () => {
+  const original = note('legacy-backup', { content: '  原始输入\r\n第二行\n\t  ' });
+  const oldRecord = { ...original };
+  delete oldRecord.category;
+  const legacy = { ...makeBackup([], []), schemaVersion: 1, notes: [oldRecord] };
+  const before = JSON.stringify(legacy);
+  const imported = applyImport(planImport(legacy, [], []));
+  assert.equal(imported.notes[0].category, '');
+  assert.equal(imported.notes[0].content, original.content);
+  assert.equal(JSON.stringify(legacy), before, 'Import planning must not rewrite the legacy backup');
+});
+
+test('new v2 exports and imports preserve categories and body whitespace exactly', () => {
+  const categorized = note('categorized-round-trip', {
+    category: '课堂笔记 / 偏旁', content: '  氵：第一行\r\n\n  第二行。\t  ',
+  });
+  const backup = makeBackup([categorized], []);
+  assert.equal(backup.schemaVersion, 2);
+  assert.equal(backup.notes[0].category, categorized.category);
+  const imported = applyImport(planImport(JSON.stringify(backup), [], []));
+  assert.deepEqual(imported.notes, [categorized]);
+  assert.deepEqual(Buffer.from(imported.notes[0].content), Buffer.from(categorized.content));
+});
+
+test('v2 requires category while v1 migration still validates every other field', () => {
+  const incomplete = { ...note('required-category') };
+  delete incomplete.category;
+  assert.throws(() => planImport({ ...makeBackup([], []), notes: [incomplete] }, [], []), /category/);
+  delete incomplete.content;
+  assert.throws(() => planImport({ ...makeBackup([], []), schemaVersion: 1, notes: [incomplete] }, [], []), /content/);
+  for (const schemaVersion of [0, 3, '2']) {
+    assert.throws(() => planImport({ ...makeBackup([], []), schemaVersion }, [], []), /版本/);
+  }
+});
+
+test('same-ID category-only changes are conflicts, with local incoming and copy choices preserved', () => {
+  const local = note('category-conflict', { category: '已复习' });
+  const incoming = note('category-conflict', { category: '待复习' });
+  const plan = planImport(makeBackup([incoming], []), [local], []);
+  assert.equal(plan.conflicts.length, 1);
+  assert.equal(plan.duplicates.length, 0);
+  assert.equal(applyImport(plan).notes[0].category, '已复习');
+  assert.equal(applyImport(plan, { notes: { 'category-conflict': 'incoming' } }).notes[0].category, '待复习');
+  assert.deepEqual(applyImport(plan, { notes: { 'category-conflict': 'copy' } }).notes.map(row => row.category).sort(), ['已复习', '待复习'].sort());
+});
+
+test('semantic deduplication keeps otherwise identical notes in different categories', () => {
+  const local = note('category-local', { category: '课堂' });
+  const otherCategory = note('category-other', { category: '自学' });
+  const sameCategory = note('category-same', { category: '课堂' });
+  const plan = planImport(makeBackup([otherCategory, sameCategory], []), [local], []);
+  assert.deepEqual(plan.newNotes.map(row => row.id), ['category-other']);
+  assert.equal(plan.duplicates.length, 1);
+  assert.equal(plan.duplicates[0].incoming.id, 'category-same');
+  assert.deepEqual(applyImport(plan).notes.map(row => row.category).sort(), ['课堂', '自学'].sort());
+});
+
+test('category does not alter component matching, including the distinct 氵 glyph', () => {
+  const original = note('categorized-water', { kind: 'component', target: '氵', position: 'left', category: '' });
+  const changed = normalizeNote({ ...original, category: '偏旁练习' });
+  const analysis = analyzeCharacter('河', fixture);
+  const before = matchNotes('河', analysis, [original]);
+  const after = matchNotes('河', analysis, [changed]);
+  assert.deepEqual(resultIds(before, 'applicable'), ['categorized-water']);
+  assert.deepEqual(resultIds(after, 'applicable'), resultIds(before, 'applicable'));
+  assert.deepEqual(after.applicable[0].reasons, before.applicable[0].reasons);
+  assert.equal(after.applicable[0].note.category, '偏旁练习');
+  assert.deepEqual(allIds(matchNotes('水', analyzeCharacter('水', metadata), [changed])), []);
+});
