@@ -53,7 +53,7 @@ test('coverage is explicit and each recognized type is a unique legal label from
     assert.equal(new Set(names).size, names.length, character);
     assert.ok(names.every(name => /^[\p{Script=Han}]{1,20}$/u.test(name)), character);
   }
-  assert.ok(bytes.length < 2 * 1024 * 1024);
+  assert.ok(bytes.length < 6 * 1024 * 1024);
 });
 
 test('simple and traditional characters have independent whole-character type lists', () => {
@@ -87,5 +87,20 @@ test('characters missing from the name source stay unfilled even when animation 
   for (const character of ['𠮷', '𰻞', '龘']) {
     assert.equal(types.characters[character], undefined);
     assert.equal(types.ambiguousTypes[character], undefined);
+  }
+});
+
+test('ordered labels retain repetition and alternatives without claiming animation alignment', () => {
+  const reference = types.orderReference;
+  assert.equal(reference.reviewedAgainstAnimation, false);
+  assert.match(reference.notice, /数量一致不保证/);
+  assert.deepEqual(reference.characters.三, [['横'], ['横'], ['横']]);
+  assert.deepEqual(reference.characters.永[2], ['横撇', '横钩']);
+  assert.deepEqual(reference.characters.橋[0], ['横']);
+  assert.equal(reference.characters['𠮷'], undefined);
+  assert.deepEqual(Object.keys(reference.characters), Object.keys(types.characters));
+  for (const [character, sequence] of Object.entries(reference.characters)) {
+    assert.ok(sequence.length > 0 && sequence.length < 100, character);
+    assert.ok(sequence.every(names => Array.isArray(names) && names.length && names.every(name => types.characters[character].includes(name))), character);
   }
 });

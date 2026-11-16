@@ -203,7 +203,7 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
     const {$,lookup}=await setup(t);await lookup('木');
     for(const name of ['横','竖','撇','捺']){$('next-stroke').click();await until(()=>$('stroke-name-input').value===name);assert.match($('stroke-name-source').textContent,/CNChar/);}
     $('previous-stroke').click();assert.equal($('stroke-name-input').value,'撇');
-    await lookup('橋');assert.match($('stroke-types-list').textContent,/横/);$('next-stroke').click();assert.equal($('stroke-name-input').value,'');assert.match($('stroke-name-source').textContent,/没有|未知/);
+    await lookup('橋');assert.match($('stroke-types-list').textContent,/横/);$('next-stroke').click();assert.equal($('stroke-name-input').value,'');assert.match($('stroke-name-source').textContent,/尚未.*核对/);await until(()=>$('pause-button').disabled);
     await lookup('木');$('next-stroke').click();assert.equal($('stroke-name-input').value,'横');await until(()=>$('pause-button').disabled);
   });
   test('ambiguous or mismatched name records stay unknown without disabling stroke animation',async t=>{
@@ -283,5 +283,15 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
     assert.equal(h.$('fact-radical').textContent,'木');assert.equal(h.$('fact-structure').textContent,'上下结构');assert.match(h.$('analysis-label').textContent,/用户修订/);
     const data=JSON.parse(JSON.parse(h.apiRequests[0].options.body).messages[1].content);assert.equal(data.reference.radical,metadata.河.radical);assert.equal(data.reference.decomposition,metadata.河.decomposition);assert.notEqual(data.reference.decomposition,'⿱木木');
     h.$('edit-character').click();h.$('reset-override').click();h.$('confirm-yes').click();assert.equal(h.$('fact-radical').textContent,metadata.河.radical);assert.equal(h.$('ai-structure-type').textContent,'左右结构');
+  });
+  test('playback shows sourced order labels beyond the reviewed set and preserves ambiguous alternatives',async t=>{
+    const h=await setup(t,{holdAnimation:true});await h.lookup('河');h.$('play-button').click();await until(()=>h.animations.length===1);
+    assert.match(h.$('stroke-status').textContent,/第 1 笔.*名称参考：点.*待核对/);assert.match(h.$('stroke-name-source').textContent,/两库顺序可能有差异/);
+    await h.lookup('永');for(let i=0;i<3;i++)h.$('next-stroke').click();await until(()=>h.animations.length===2);
+    assert.match(h.$('stroke-status').textContent,/横撇 \/ 横钩.*待核对/);
+  });
+  test('order label count mismatches never assign a name to an animation stroke',async t=>{
+    const h=await setup(t,{namesData:{schemaVersion:1,characters:{}},typesData:{schemaVersion:1,characters:{木:['横']},orderReference:{characters:{木:[['横']]}}}});
+    await h.lookup('木');h.$('next-stroke').click();assert.match(h.$('stroke-status').textContent,/暂无逐笔名称数据/);assert.doesNotMatch(h.$('stroke-status').textContent,/名称参考：横/);await until(()=>h.$('pause-button').disabled);
   });
 }

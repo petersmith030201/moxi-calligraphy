@@ -1,6 +1,6 @@
-import { analyzeCharacter, matchNotes, matchCharacterStrokeNotes, matchRadicalNotes, normalizeNote, normalizeOverride, makeBackup, planImport, applyImport } from './model.js?v=0.5.0';
-import { readNotebook, saveNotebook, readPreviousNotebook } from './store.js?v=0.5.0';
-import { createStructureAnalyzer } from './ai.js?v=0.5.0';
+import { analyzeCharacter, matchNotes, matchCharacterStrokeNotes, matchRadicalNotes, normalizeNote, normalizeOverride, makeBackup, planImport, applyImport } from './model.js?v=0.5.1';
+import { readNotebook, saveNotebook, readPreviousNotebook } from './store.js?v=0.5.1';
+import { createStructureAnalyzer } from './ai.js?v=0.5.1';
 
 const $ = (id) => document.getElementById(id);
 const positions = { any: '不限位置', left: '左侧', right: '右侧', top: '上方', bottom: '下方', inside: '内部', outside: '外部', center: '中间', standalone: '独立成字' };
@@ -9,6 +9,7 @@ const commonNames = { 氵: '三点水', 扌: '提手旁', 讠: '言字旁', 亻:
 const state = { character: '永', metadata: {}, data: { notes: [], overrides: [], aliases: [] }, analysis: null, writer: null, strokeData: null, strokeIndex: -1, paused: false, loadVersion: 0, importPlan: null, confirmAction: null, unsaved: false };
 state.strokeNames = []; state.strokeNameSource = ''; state.manualStrokeNames = Object.create(null); state.strokeNameQuery = ''; state.animationRun = 0; state.strokeNameData = {}; state.resumePlayback = null;
 state.strokeTypes = {}; state.strokeTypeAmbiguity = {}; state.strokeTypesLoaded = false;
+state.strokeOrderReference = {};
 state.aiConfig = null; state.aiAuto = true; state.aiResult = null; state.aiRequest = 0; state.aiPending = false; state.aiError = '';
 let structureAI = createStructureAnalyzer();
 let toastTimer;
@@ -153,6 +154,20 @@ function syncStrokeName() {
   const manual = Object.hasOwn(state.manualStrokeNames, index);
   $('stroke-name-input').value = manual ? state.manualStrokeNames[index] : index >= 0 ? state.strokeNames[index] || '' : state.strokeNameQuery;
   $('stroke-name-source').textContent = manual || (index < 0 && state.strokeNameQuery) ? '手动填写 · 仅本次查字使用，不修改字库' : index >= 0 && state.strokeNames[index] ? `名称来源：${state.strokeNameSource || '逐笔名称数据'}` : '没有已确认的名称；可以手动选择，留空时不推测。';
+  const reference = currentStrokeReference();
+  if (index >= 0 && !state.strokeNames[index]) $('stroke-name-source').textContent = reference ? 'CNChar 笔顺名称参考，尚未与动画逐笔核对；两库顺序可能有差异。候选叫法不代表同时存在。' : '此笔暂无可对应的名称数据；不影响笔顺轨迹播放。';
+  if (index >= 0 && /^第\s*\d+\s*笔/.test($('stroke-status').textContent)) status('stroke-status', `第 ${index + 1} 笔 · ${currentStrokeLabel()}`);
+}
+function currentStrokeReference() {
+  const sequence = state.strokeOrderReference[state.character];
+  if (!state.strokeData || !Array.isArray(sequence) || sequence.length !== state.strokeData.strokes.length) return null;
+  const names = sequence[state.strokeIndex];
+  return Array.isArray(names) && names.length > 0 && names.length <= 5 && names.every(name => typeof name === 'string' && /^\p{Script=Han}{1,20}$/u.test(name)) ? names : null;
+}
+function currentStrokeLabel() {
+  if (state.strokeNames[state.strokeIndex]) return state.strokeNames[state.strokeIndex];
+  const reference = currentStrokeReference();
+  return reference ? `名称参考：${reference.join(' / ')}（待核对）` : '暂无逐笔名称数据';
 }
 // Pass the character captured before an asynchronous data request to prevent
 // a late response from assigning another character's stroke names.
@@ -304,7 +319,7 @@ async function playAll() {
       if (state.paused) await new Promise((resolve) => { state.resumePlayback = resolve; });
       if (run !== state.animationRun || writer !== state.writer) return;
       state.strokeIndex = index; $('stroke-position').textContent = `第 ${index + 1} / ${count} 笔`; syncStrokeName(); updateTrajectory();
-      status('stroke-status', `第 ${index + 1} 笔 · ${$('stroke-name-input').value || '笔画名称未知'}`);
+      status('stroke-status', `第 ${index + 1} 笔 · ${currentStrokeLabel()}`);
       const result = await writer.animateStroke(index);
       if (result?.canceled || run !== state.animationRun || writer !== state.writer) return;
     }
@@ -319,7 +334,7 @@ function animationFailed(run, writer) {
 async function playSingle(index) {
   if (!state.writer || !state.strokeData) return;
   const run = nextAnimationRun(); const writer = state.writer; const current = Math.max(0, Math.min(state.strokeData.strokes.length - 1, index));
-  state.strokeIndex = current; state.paused = false; syncStrokeName(); $('pause-button').textContent = '暂停'; $('pause-button').disabled = false; $('stroke-position').textContent = `第 ${current + 1} / ${state.strokeData.strokes.length} 笔`; status('stroke-status', `第 ${current + 1} 笔 · ${$('stroke-name-input').value || '笔画名称未知'}`); updateTrajectory();
+  state.strokeIndex = current; state.paused = false; syncStrokeName(); $('pause-button').textContent = '暂停'; $('pause-button').disabled = false; $('stroke-position').textContent = `第 ${current + 1} / ${state.strokeData.strokes.length} 笔`; status('stroke-status', `第 ${current + 1} 笔 · ${currentStrokeLabel()}`); updateTrajectory();
   try {
     await writer.hideCharacter({ duration: 0 });
     if (run !== state.animationRun || writer !== state.writer) return;
@@ -364,5 +379,5 @@ if (loaded.error) showStorageFailure(loaded.error);
 renderAll(); lookup('永');
 fetchJSON('./data/characters.json', { cache: 'no-cache' }).then((data) => { if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('字典格式无效'); state.metadata = data; renderAnalysis(); renderMatches(); status('lookup-status', state.metadata[state.character] ? '字形与拆分来自数据库参考；个人笔记按原文呈现。' : '数据库未收录，仍可手动修订并记录笔记。'); }).catch(() => status('lookup-status', '字典暂未加载。可手动修订和记录；请通过 HTTP 服务打开网页。', true));
 fetchJSON('./data/stroke-names.json', { cache: 'no-cache' }).then((data) => { if (data?.schemaVersion === 1 && data.characters && typeof data.characters === 'object' && !Array.isArray(data.characters)) state.strokeNameData = data.characters; applyKnownStrokeNames(); }).catch(() => { state.strokeNameData = {}; applyKnownStrokeNames(); });
-fetchJSON('./data/stroke-types.json', { cache: 'no-cache' }).then((data) => { if (data?.schemaVersion !== 1 || !data.characters || typeof data.characters !== 'object' || Array.isArray(data.characters)) throw new Error('Invalid stroke types'); state.strokeTypes = data.characters; state.strokeTypeAmbiguity = data.ambiguousTypes || {}; }).catch(() => { state.strokeTypes = {}; }).finally(() => { state.strokeTypesLoaded = true; renderStrokeMatches(); });
+fetchJSON('./data/stroke-types.json', { cache: 'no-cache' }).then((data) => { if (data?.schemaVersion !== 1 || !data.characters || typeof data.characters !== 'object' || Array.isArray(data.characters)) throw new Error('Invalid stroke types'); state.strokeTypes = data.characters; state.strokeOrderReference = data.orderReference?.characters || {}; state.strokeTypeAmbiguity = data.ambiguousTypes || {}; }).catch(() => { state.strokeTypes = {}; }).finally(() => { state.strokeTypesLoaded = true; renderStrokeMatches(); syncStrokeName(); });
 const initialPage = location.hash.slice(1); if (['lookup', 'notebook', 'data'].includes(initialPage)) showPage(initialPage);

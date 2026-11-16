@@ -37,6 +37,7 @@ cnchar.use(require(path.join(cache, 'cnchar-order.cjs')), require(path.join(cach
 const metadataBytes = await readFile(path.join(root, 'data/characters.json'));
 const metadata = JSON.parse(metadataBytes.toString('utf8'));
 const characters = {};
+const orderedNames = {};
 const ambiguousTypes = {};
 const ambiguityGroups = new Map();
 let missingCharacters = 0;
@@ -69,6 +70,7 @@ for (const character of Object.keys(metadata)) {
   // A malformed source row is omitted in full, never partly filled by inference.
   if (!valid) { rejectedCharacters++; continue; }
   characters[character] = [...types];
+  orderedNames[character] = sequence.map(raw => raw.split('|').map(normalizeName));
   if (candidates.size) ambiguousTypes[character] = [...candidates];
   for (const [raw, alternatives] of groupsForCharacter) ambiguityGroups.set(raw, alternatives);
   ambiguousOccurrences += characterAmbiguities;
@@ -110,6 +112,12 @@ const data = {
   },
   characters,
   ambiguousTypes,
+  orderReference: {
+    source: 'CNChar 3.2.6',
+    reviewedAgainstAnimation: false,
+    notice: 'CNChar 笔顺名称序列参考，未与动画逐笔全面核对；仅在名称数量与动画笔画数一致时按序显示，数量一致不保证两库顺序一致。候选名称不代表同时存在。',
+    characters: orderedNames,
+  },
 };
 const output = `${JSON.stringify(data, null, 2)}\n`;
 await writeFile(path.join(root, 'data/stroke-types.json'), output, 'utf8');
