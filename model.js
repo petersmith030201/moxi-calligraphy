@@ -5,6 +5,7 @@ const POSITION_LABELS = {any:'不限位置',left:'左侧',right:'右侧',top:'�
 const KINDS = new Set(['character', 'component', 'structure', 'stroke']);
 const STROKE_KEYWORDS = ['横', '竖', '撇', '捺', '点', '提', '折', '钩'];
 const SCOPES = new Set(['top', 'any-depth']);
+export const LAYOUT_TAGS = Object.freeze(['左窄右宽', '左宽右窄', '上紧下松', '上松下紧', '左收右放', '左放右收', '上收下放', '上放下收', '上小下大', '上大下小', '左高右低', '左低右高', '中宫收紧', '重心居中']);
 const COMMON_INDEPENDENT = new Set(Array.from('永天大木水火人一二三十上下口日月田目山川中土工小'));
 const UNSAFE = new Set(['__proto__', 'prototype', 'constructor']);
 const NOTE_KEYS = new Set(['id', 'title', 'kind', 'target', 'position', 'scope', 'conditions', 'content', 'examples', 'source', 'category', 'createdAt', 'updatedAt']);
@@ -90,6 +91,27 @@ function stroke(value) {
   if (!result || !/^\p{Script=Han}+$/u.test(result)) throw new Error('笔画名称请填写1至20个汉字，如横、竖提或横折钩；自定义名称不代表规范认证。');
   return result;
 }
+function teachingStructure(value) {
+  const name = text(value, '间架结构', 32);
+  return LAYOUT_TAGS.includes(name) ? name : structure(name);
+}
+export function elementOptions(kind) {
+  if (kind === 'stroke') return ['横', '长横', '短横', '竖', '悬针竖', '垂露竖', '撇', '捺', '点', '提', '折', '钩', '横折', '横折钩', '竖钩', '竖弯钩'];
+  if (kind === 'component') return [...new Set([...COMPONENT_NAMES.values(), '可', '页', '贝', '阝', '卩', '彡', '雨', '足'])].map(value => ({ value, label: [...COMPONENT_NAMES].find(([, glyph]) => glyph === value)?.[0] || value }));
+  if (kind === 'structure') return [...new Set(STRUCTURES.values())].filter(value => value !== '结构待核对').concat(LAYOUT_TAGS);
+  return [];
+}
+export function matchLayoutNotes(features, notes) {
+  const tags = new Map();
+  for (const item of Array.isArray(features) ? features : []) if (item && LAYOUT_TAGS.includes(item.name) && typeof item.reason === 'string' && !tags.has(item.name)) tags.set(item.name, item.reason.slice(0, 300));
+  const result = [], seen = new Set();
+  for (const raw of Array.isArray(notes) ? notes : []) {
+    let note; try { note = normalizeNote(raw); } catch { continue; }
+    if (note.kind !== 'structure' || !tags.has(note.target) || seen.has(note.id)) continue;
+    seen.add(note.id); result.push({ note, reasons: [`AI 匹配参考：${note.target}。${tags.get(note.target)}`, '布局特点属于 AI 推演，须对照范字核对；记录原文保持不变。'] });
+  }
+  return result;
+}
 function timestamp(value, fallback, label) {
   if (value === undefined && fallback) return fallback;
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T/.test(value) || !Number.isFinite(Date.parse(value))) {
@@ -115,7 +137,7 @@ function normalize(raw, strict = false) {
   }
   if (!KINDS.has(raw.kind)) throw new Error('笔记类型须为汉字、偏旁、结构或笔画。');
   const target = raw.kind === 'character' ? character(raw.target) : raw.kind === 'component' ? component(raw.target)
-    : raw.kind === 'stroke' ? stroke(raw.target) : structure(raw.target);
+    : raw.kind === 'stroke' ? stroke(raw.target) : teachingStructure(raw.target);
   const position = raw.position ?? 'any';
   const scope = raw.scope ?? 'top';
   if (!POSITIONS.has(position)) throw new Error('偏旁位置无效。');
@@ -430,7 +452,7 @@ function snapshot(notes, overrides, aliases = [], strict = false) {
 }
 export function makeBackup(notes, overrides, aliases = []) {
   safe({ notes, overrides, aliases });
-  return { application: 'moxi-notebook', schemaVersion: 3, exportedAt: new Date().toISOString(), ...snapshot(notes, overrides, aliases) };
+  return { application: 'moxi-notebook', schemaVersion: 4, exportedAt: new Date().toISOString(), ...snapshot(notes, overrides, aliases) };
 }
 function fullNoteKey(note) {
   const { id, createdAt, updatedAt, ...content } = note;
@@ -456,7 +478,7 @@ export function planImport(backup, currentNotes, currentOverrides, aliases = [])
   if (!object(incoming)) throw new Error('备份顶层须为对象。');
   if (incoming.application === 'moxi') throw new Error('这是旧版墨习v0.1学习记录备份，不是新版写法笔记备份。请保留原文件；本次不会修改现有数据。');
   if (incoming.application !== 'moxi-notebook') throw new Error('请选择墨习写法笔记备份，application应为moxi-notebook。');
-  if (![1, 2, 3].includes(incoming.schemaVersion)) throw new Error('此备份版本暂不支持，请保留原文件并使用兼容版本。');
+  if (![1, 2, 3, 4].includes(incoming.schemaVersion)) throw new Error('此备份版本暂不支持，请保留原文件并使用兼容版本。');
   onlyKeys(incoming, new Set(['application', 'schemaVersion', 'exportedAt', 'notes', 'overrides', 'aliases']), '备份');
   timestamp(incoming.exportedAt, null, '导出时间');
   if (!Array.isArray(incoming.overrides)) throw new Error('备份的overrides须为数组。');

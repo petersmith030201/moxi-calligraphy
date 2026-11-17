@@ -70,6 +70,10 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
     await until(()=>!$('stroke-types-status').textContent.includes('正在加载'),'Stroke type reference did not settle');
     const lookup=async char=>{doc.querySelector('[data-page="lookup"]').click();set('character-input',char);submit('lookup-form');await until(()=>$('current-character').textContent===char);await until(()=>!$('stroke-status').textContent.includes('正在加载'),'Stroke request did not settle');};
     const newNote=async({kind='component',target='氵',position='left',content='  第一行\n第二行：保持原文。\n',conditions='',title='三点水笔记',category=''}={})=>{
+      if(kind==='character'){
+        const stamp=new Date().toISOString();
+        await importText(JSON.stringify({application:'moxi-notebook',schemaVersion:3,exportedAt:stamp,notes:[{id:w.crypto.randomUUID(),kind,target,title,position,scope:'top',content,conditions,category,source:'测试用个人笔记，非教材引用',examples:[],createdAt:stamp,updatedAt:stamp}],overrides:[],aliases:[]}));$('confirm-import').click();doc.querySelector('[data-page="notebook"]').click();return;
+      }
       doc.querySelector('[data-page="notebook"]').click();$('new-note').click();for(const [id,value]of Object.entries({'note-kind':kind,'note-title':title,'note-target':target,'note-position':position,'note-scope':'top','note-category':category,'note-conditions':conditions,'note-content':content,'note-source':'测试用个人笔记，非教材引用'}))set(id,value);
       submit('note-form');await until(()=>!$('note-dialog').open,`Note did not save: ${$('note-form-status').textContent}`);
     };
@@ -165,13 +169,13 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
     choose('我的新分类');assert.match($('notebook-list').textContent,/三点水笔记/);await lookup('江');assert.match($('matched-notes').textContent,/三点水笔记/);assert.match($('matched-notes').textContent,/我的新分类/);
   });
   test('classification survives the current export and import flow',async t=>{
-    const first=await setup(t);await first.newNote({category:'all'});first.$('export-backup').click();await until(()=>first.downloads.length);const text=await first.downloads.at(-1).text();assert.equal(JSON.parse(text).schemaVersion,3);
+    const first=await setup(t);await first.newNote({category:'all'});first.$('export-backup').click();await until(()=>first.downloads.length);const text=await first.downloads.at(-1).text();assert.equal(JSON.parse(text).schemaVersion,4);
     const second=await setup(t);await second.importText(text);second.$('confirm-import').click();assert.equal(JSON.parse(second.w.localStorage.getItem(storageKey)).notes[0].category,'all');
     const option=[...second.$('note-category-filter').options].find(option=>option.textContent==='all');assert.ok(option);assert.notEqual(option.value,'all');second.set('note-category-filter',option.value);assert.match(second.$('notebook-list').textContent,/三点水笔记/);
   });
   test('v1 backups and local records with no category remain visible as uncategorized',async t=>{
     const first=await setup(t);await first.newNote();first.$('export-backup').click();await until(()=>first.downloads.length);const legacy=JSON.parse(await first.downloads.at(-1).text());legacy.schemaVersion=1;delete legacy.notes[0].category;
-    const stored=await setup(t,{saved:{notes:legacy.notes,overrides:[],aliases:[]}});assert.match(stored.$('notebook-list').textContent,/三点水笔记/);assert.match(stored.$('notebook-list').textContent,/未分类/);
+    const stored=await setup(t,{saved:{notes:legacy.notes,overrides:[],aliases:[]}});assert.match(stored.$('notebook-list').textContent,/三点水笔记/);assert.match(stored.$('note-category-filter').textContent,/未分类/);
     const imported=await setup(t);await imported.importText(JSON.stringify(legacy));imported.$('confirm-import').click();assert.equal(JSON.parse(imported.w.localStorage.getItem(storageKey)).notes[0].category,'');
   });
   test('stroke references include all matching categories across note kinds and never match body text alone',async t=>{
@@ -192,7 +196,7 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
   test('stroke notes survive the current backup flow and stay separate from whole-character matches',async t=>{
     const first=await setup(t);await first.newNote({kind:'stroke',target:'横',category:'短横观察',content:'笔画原始内容'});
     assert.equal(first.$('note-position').disabled,true);assert.equal(first.$('note-scope').disabled,true);
-    first.$('export-backup').click();await until(()=>first.downloads.length);const data=await first.downloads.at(-1).text();assert.equal(JSON.parse(data).schemaVersion,3);
+    first.$('export-backup').click();await until(()=>first.downloads.length);const data=await first.downloads.at(-1).text();assert.equal(JSON.parse(data).schemaVersion,4);
     const second=await setup(t);await second.importText(data);second.$('confirm-import').click();
     assert.equal(JSON.parse(second.w.localStorage.getItem(storageKey)).notes[0].kind,'stroke');
     second.set('note-kind-filter','stroke');assert.match(second.$('notebook-list').textContent,/笔画原始内容/);
@@ -293,5 +297,36 @@ if(!jsdom||typeof vm.SourceTextModule!=='function'){
   test('order label count mismatches never assign a name to an animation stroke',async t=>{
     const h=await setup(t,{namesData:{schemaVersion:1,characters:{}},typesData:{schemaVersion:1,characters:{木:['横']},orderReference:{characters:{木:[['横']]}}}});
     await h.lookup('木');h.$('next-stroke').click();assert.match(h.$('stroke-status').textContent,/暂无逐笔名称数据/);assert.doesNotMatch(h.$('stroke-status').textContent,/名称参考：横/);await until(()=>h.$('pause-button').disabled);
+  });
+  test('the simple editor records an element and body without title category position or scope input',async t=>{
+    const h=await setup(t);h.doc.querySelector('[data-page="notebook"]').click();h.$('new-note').click();
+    assert.deepEqual([...h.$('note-kind').options].filter(option=>!option.hidden).map(option=>option.value),['stroke','component','structure']);
+    assert.equal(h.$('note-title').type,'hidden');assert.equal(h.$('note-legacy-fields').hidden,true);
+    h.set('note-target','横');h.set('note-content','  长横：第一段。\n短横：第二段。  ');h.submit('note-form');
+    await until(()=>!h.$('note-dialog').open);const saved=JSON.parse(h.w.localStorage.getItem(storageKey)).notes[0];assert.equal(saved.title,'横的写法');assert.equal(saved.category,'');assert.equal(saved.position,'any');
+    h.$('new-note').click();h.set('note-kind','component');h.set('note-target','三点水');h.set('note-content','三点水写法');h.submit('note-form');await until(()=>!h.$('note-dialog').open);
+    assert.equal(JSON.parse(h.w.localStorage.getItem(storageKey)).notes[1].target,'氵');await h.lookup('河');assert.match(h.$('matched-notes').textContent,/三点水写法/);assert.match(h.$('stroke-matched-notes').textContent,/长横：第一段/);
+  });
+  test('records for the same element are grouped without merging or overwriting their original text',async t=>{
+    const h=await setup(t);await h.newNote({kind:'stroke',target:'长横',content:'第一份横记录'});await h.newNote({kind:'stroke',target:'短横',content:'第二份横记录'});
+    assert.equal(h.$('notebook-list').querySelectorAll('.element-record-group').length,1);assert.equal(h.$('notebook-list').querySelectorAll('.note-card').length,2);assert.match(h.$('notebook-list').textContent,/2 条记录/);
+    h.doc.querySelector('[data-library-kind="component"]').click();assert.equal(h.$('notebook-list').querySelectorAll('.note-card').length,0);h.$('show-all-library').click();assert.equal(h.$('notebook-list').querySelectorAll('.note-card').length,2);
+    h.$('export-backup').click();await until(()=>h.downloads.length);const data=JSON.parse(await h.downloads.at(-1).text());assert.equal(data.schemaVersion,4);assert.deepEqual(data.notes.map(note=>note.content),['第一份横记录','第二份横记录']);
+  });
+  test('editing a legacy whole-character record retains its title category position conditions and source',async t=>{
+    const h=await setup(t);await h.newNote({kind:'character',target:'河',position:'right',conditions:'仅此例字',category:'旧课堂',title:'旧标题',content:'旧正文'});
+    const before=JSON.parse(h.w.localStorage.getItem(storageKey)).notes[0];h.$('notebook-list').querySelector('.note-controls button').click();assert.equal(h.$('note-kind').value,'character');assert.equal(h.$('note-legacy-fields').hidden,false);
+    h.set('note-content','只更新正文');h.submit('note-form');const after=JSON.parse(h.w.localStorage.getItem(storageKey)).notes[0];
+    for(const key of ['id','createdAt','title','kind','target','category','conditions','position','scope','source'])assert.equal(after[key],before[key],key);
+    assert.equal(after.content,'只更新正文');
+  });
+  test('API layout tags associate saved layout records alongside basic structure without sending private content',async t=>{
+    const h=await setup(t,{apiHandler:request=>{
+      const character=JSON.parse(JSON.parse(request.options.body).messages[1].content).character;
+      return{ok:true,json:async()=>({choices:[{message:{content:JSON.stringify({character,structure:'左右结构',analysis:'比较左右安排。',suggestions:[],uncertainty:'需要核对。',layoutFeatures:[{name:'左窄右宽',reason:'左右宽度关系的候选判断。'}]})}}]})};
+    }});
+    await h.newNote({kind:'structure',target:'左窄右宽',content:'PRIVATE_LAYOUT_RECORD'});await h.newNote({kind:'structure',target:'左宽右窄',content:'OTHER_LAYOUT_RECORD'});await h.newNote({kind:'structure',target:'左右结构',content:'BASIC_STRUCTURE_RECORD'});
+    await h.lookup('河');assert.doesNotMatch(h.$('matched-notes').textContent,/PRIVATE_LAYOUT_RECORD/);await configureAI(h);await until(()=>h.$('ai-layout-features').textContent.includes('左窄右宽'));
+    assert.match(h.$('matched-notes').textContent,/PRIVATE_LAYOUT_RECORD/);assert.match(h.$('matched-notes').textContent,/BASIC_STRUCTURE_RECORD/);assert.doesNotMatch(h.$('matched-notes').textContent,/OTHER_LAYOUT_RECORD/);assert.match(h.$('matched-notes').textContent,/AI 匹配参考/);assert.ok(h.apiRequests.every(request=>!request.options.body.includes('PRIVATE_LAYOUT_RECORD')));
   });
 }

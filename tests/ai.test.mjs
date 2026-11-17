@@ -16,6 +16,17 @@ function makeMock() {
   const fetchImpl = (url, options) => new Promise((resolve, reject) => { calls.push({ url, options, resolve, reject }); });
   return { calls, fetchImpl };
 }
+test('API layout features are bounded named observations and cached results are independently copied',async()=>{
+  const features=[{name:'左窄右宽',reason:'对比左右偏旁宽度，需结合范字核对。'}];
+  const api=createStructureAnalyzer({fetchImpl:async()=>response(analysis('河',{layoutFeatures:features}))});api.configure(config);
+  const first=await api.analyze('河',reference);assert.deepEqual(first.layoutFeatures,features);first.layoutFeatures[0].reason='外部修改';
+  const second=await api.analyze('河',reference);assert.equal(second.layoutFeatures[0].reason,features[0].reason);
+});
+test('unrecognized fabricated duplicate or unbounded AI layout labels are rejected',async()=>{
+  for(const features of [[{name:'任意编造',reason:'未知'}],[{name:'左窄右宽',reason:''}],[{name:'左窄右宽',reason:'a'},{name:'左窄右宽',reason:'b'}],Array.from({length:7},()=>({name:'左窄右宽',reason:'a'}))]){
+    const api=createStructureAnalyzer({fetchImpl:async()=>response(analysis('河',{layoutFeatures:features}))});api.configure(config);await assert.rejects(api.analyze('河',reference),{code:'INVALID_RESPONSE'});
+  }
+});
 
 test('no API is selected or called until a complete user configuration is provided', async () => {
   let calls = 0;
@@ -61,7 +72,7 @@ test('requests send only the character and allowlisted references; the key stays
   assert.match(body.messages[0].content, /统一称为“偏旁”/);
   assert.match(body.messages[0].content, /不得声称阅读过PDF/);
   assert.doesNotMatch(options.body + url, /PRIVATE_|test-key-only-in-memory/);
-  assert.deepEqual(result, { ...analysis(), source: 'AI', model: config.model });
+  assert.deepEqual(result, { ...analysis(), layoutFeatures: [], source: 'AI', model: config.model });
   assert.doesNotMatch(JSON.stringify(result), /PRIVATE_|test-key-only-in-memory/);
 });
 

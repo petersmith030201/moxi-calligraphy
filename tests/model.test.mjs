@@ -3,9 +3,25 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
   normalizeNote, normalizeOverride, analyzeCharacter, matchNotes, matchStrokeNotes,
-  matchCharacterStrokeNotes, matchRadicalNotes,
+  matchCharacterStrokeNotes, matchRadicalNotes, matchLayoutNotes, elementOptions, LAYOUT_TAGS,
   makeBackup, planImport, applyImport,
 } from '../model.js';
+
+test('layout records round trip in v4 while v1 v2 v3 records retain all legacy fields', () => {
+  const record = normalizeNote({kind:'structure',target:'左窄右宽',content:'  观察原文\n第二行。  '});
+  assert.equal(makeBackup([record], []).schemaVersion,4);
+  assert.deepEqual(applyImport(planImport(makeBackup([record],[]),[],[])).notes,[record]);
+  const legacy = normalizeNote({kind:'component',target:'三点水',position:'left',scope:'any-depth',category:'课堂',conditions:'原条件',content:'原文',title:'原标题'});
+  for(const version of [1,2,3]) assert.deepEqual(applyImport(planImport({...makeBackup([legacy],[]),schemaVersion:version},[],[])).notes,[legacy]);
+  assert.throws(()=>normalizeOverride({character:'河',structure:'左窄右宽',radical:'氵',decomposition:'',components:[]}));
+});
+test('AI layout matching uses only recognized tags and preserves saved text and identity', () => {
+  const left=normalizeNote({kind:'structure',target:'左窄右宽',content:'  左窄原文  '}), other=normalizeNote({kind:'structure',target:'左宽右窄',content:'另一个标签'});
+  const result=matchLayoutNotes([{name:'左窄右宽',reason:'比较两侧宽度，需核对。'},{name:'左窄右宽',reason:'重复'}],[left,left,other]);
+  assert.equal(result.length,1);assert.equal(result[0].note.content,'  左窄原文  ');assert.match(result[0].reasons.join(''),/AI 匹配参考/);
+  assert.deepEqual(matchLayoutNotes([], [left]),[]);assert.deepEqual(matchLayoutNotes([{name:'任意编造',reason:'未知'}],[left]),[]);
+  assert.ok(elementOptions('structure').includes('左右结构'));assert.ok(elementOptions('structure').includes('左窄右宽'));assert.ok(LAYOUT_TAGS.length>0);
+});
 
 const stamp = '2026-11-15T00:00:00.000Z';
 const metadata = JSON.parse(await readFile(new URL('../data/characters.json', import.meta.url), 'utf8'));
@@ -270,7 +286,7 @@ test('new v3 exports and imports preserve categories and body whitespace exactly
     category: '课堂笔记 / 偏旁', content: '  氵：第一行\r\n\n  第二行。\t  ',
   });
   const backup = makeBackup([categorized], []);
-  assert.equal(backup.schemaVersion, 3);
+  assert.equal(backup.schemaVersion, 4);
   assert.equal(backup.notes[0].category, categorized.category);
   const imported = applyImport(planImport(JSON.stringify(backup), [], []));
   assert.deepEqual(imported.notes, [categorized]);
@@ -283,7 +299,7 @@ test('v2 requires category while v1 migration still validates every other field'
   assert.throws(() => planImport({ ...makeBackup([], []), schemaVersion: 2, notes: [incomplete] }, [], []), /category/);
   delete incomplete.content;
   assert.throws(() => planImport({ ...makeBackup([], []), schemaVersion: 1, notes: [incomplete] }, [], []), /content/);
-  for (const schemaVersion of [0, 4, '3']) {
+  for (const schemaVersion of [0, 5, '3']) {
     assert.throws(() => planImport({ ...makeBackup([], []), schemaVersion }, [], []), /版本/);
   }
 });
@@ -424,7 +440,7 @@ test('empty stroke selection is safe and malformed nonempty names fail readably'
 test('v3 backs up stroke notes while v1 and v2 notebooks remain importable', () => {
   const strokeNote = note('stroke-backup', { kind: 'stroke', target: '横折钩', category: '横折类', content: '  仍保留原文\r\n  ' });
   const backup = makeBackup([strokeNote], []);
-  assert.equal(backup.schemaVersion, 3);
+  assert.equal(backup.schemaVersion, 4);
   assert.deepEqual(applyImport(planImport(JSON.stringify(backup), [], [])).notes, [strokeNote]);
   const v2Note = note('v2-existing-category', { category: '旧分类' });
   const v2Backup = { ...makeBackup([v2Note], []), schemaVersion: 2 };
